@@ -37,6 +37,8 @@ def _check_transformers():
 def _resolve(name_or_path, revision):
     path = Path(name_or_path)
     if path.is_dir():
+        if revision is not None:
+            raise ValueError("revision applies to HF repo ids, not to a local weights directory")
         return path
     from huggingface_hub import snapshot_download
 

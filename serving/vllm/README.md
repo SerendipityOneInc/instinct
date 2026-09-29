@@ -55,8 +55,6 @@ candidate letter (` A`, ` B`, ...) log-probabilities at the last position with
 no sampling. The vLLM server runs with compilation mode 3, `PIECEWISE` CUDA
 graphs (capture sizes 128 to 2048), prefix caching off, async scheduling off
 (`instinct/serve.sh`).
-Original: `jev-tune` PR #60 `scripts/jqv_frozen/serve_native.py:45-47`, and the
-launch flags in `model-deployment` PR #5 `deploy/jqv-27b/supervise.py:121-126`.
 
 ### `instinct-dual-4b` (frozen Qwen3.5-4B, Reflex markdown prompt)
 
@@ -64,12 +62,11 @@ Two independent vLLM servers, each pinned to its own GPU, score the two option
 orders of a question concurrently (branch 1 on the primary, branch 2 on the
 secondary; a two-thread executor, then results are put back in order).
 Requests are serialized and each engine gets one sequence per call, so an
-engine never batches unrelated sequences (`parallel_order_scores.py:22-58`,
-`serve_vllm_reflex_latency.py:201`). The readout is `native-padded-v1`: one
+engine never batches unrelated sequences (`instinct-dual-4b/parallel_order_scores.py`). The readout is `native-padded-v1`: one
 ignored token (the first label token) is appended to the prompt and the server
 reads the **penultimate** position, which is the unpadded prompt's last position
-(`serve_vllm_reflex_latency.py:189`; overlay edits at
-`prepare_vllm_native_padded_overlay.py:11-56`). The overlay script also lets
+(`common/vllm_readout.py`; overlay edits in
+`instinct-dual-4b/prepare_padded_overlay.py`). The overlay script also lets
 native readouts consume automatic-prefix-cache blocks; the launcher keeps prefix
 caching disabled, so that part is inactive as shipped. Servers run eager,
 `--max-num-batched-tokens 2048`, `--max-num-seqs 32`, `--max-logprobs 32`

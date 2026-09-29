@@ -74,7 +74,7 @@ For single records in the lower-level format (`id`, `group_id`, `state`, `instru
 | `questions` | object | Maps each question id to a question. |
 | `questions.*.type` | `noul`, `choice` or `score` | |
 | `questions.*.instructions` | string | The question or proposition. |
-| `questions.*.criteria` | depends on type | `choice`: an object mapping 2–16 option keys to descriptions. `score`: a list of 2–16 ordered level descriptions. `noul`: optional `{"true", "false"}` wording; whether the model sees it depends on the recipe. |
+| `questions.*.criteria` | depends on type | `choice`: an object mapping 2–16 option keys to descriptions. `score`: a list of 2–16 ordered level descriptions (2–10 for `instinct-dual-4b`). `noul`: optional `{"true", "false"}` wording; whether the model sees it depends on the recipe. |
 | `model`, `permutations` | optional | `model` must match the served model. `permutations` must be 1 or omitted; each recipe fixes its own option orders. |
 
 ### How the runtime scores a question

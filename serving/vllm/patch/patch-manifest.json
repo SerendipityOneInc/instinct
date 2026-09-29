@@ -1,6 +1,6 @@
 {
   "base_version": "0.17.1",
-  "patch": "jqv-latency-v3",
+  "patch": "native-readout",
   "purpose": "Native final-position candidate readout with genuine zero decoding (prefill-only scoring); optional compact response for legacy candidate-appended scoring.",
   "files": {
     "vllm/entrypoints/openai/completion/protocol.py": {
