@@ -43,16 +43,16 @@ A model is defined by a recipe in [`instinct/recipes/`](instinct/recipes/): pinn
 
 ## Measured results
 
-JevBench public subset, 231 tasks, BF16 on one NVIDIA H200:
+JevBench public subset, all 231 published tasks, BF16 on one NVIDIA H200:
 
 | Split | `instinct-tuned-4b` | `reference-qwen3.8-27b` |
 |---|---:|---:|
-| Easy | 48/48 | 48/48 |
-| Standard | 69/72 | 69/72 |
-| Hard | 81/111 | 84/111 |
+| Easy | 48/48 (100.00%) | 48/48 (100.00%) |
+| Standard | 69/72 (95.83%) | 69/72 (95.83%) |
+| Hard | 81/111 (72.97%) | 84/111 (75.68%) |
 | **Total** | **198/231 (85.71%)** | **201/231 (87.01%)** |
 
-These are public-set diagnostics, not held-out scores or official full-suite ranks. The public items were used for model selection during development. The tuned model was scored with the official JevBench client in the original option order; the baseline result comes from our evaluation harness. Their probability scales also differ: the tuned model uses `T=2.80`, while the baseline is uncalibrated at `T=1.0`.
+Both runs evaluated 231/231 items. These are public-set diagnostics, not held-out scores, official full-suite ranks, or full JevBench Intelligence and Calibration scores: the public subset has no judge tier, and those axes require additional data. The public items were used for model selection during development. The tuned model was scored with the official JevBench client in the original option order; the baseline result comes from our evaluation harness. Their probability scales also differ: the tuned model uses `T=2.80`, while the baseline is uncalibrated at `T=1.0`.
 
 See the [`instinct-tuned-4b` release notes](models/instinct-tuned-4b/README.md) and [reference baseline notes](reference/qwen3.8-27b/README.md) for the exact evaluation conditions.
 
