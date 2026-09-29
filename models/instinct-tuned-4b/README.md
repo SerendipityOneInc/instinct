@@ -2,13 +2,13 @@
 
 A 4B decision model: a LoRA fine-tune of Qwen3.5-4B, merged into the base weights. It serves all three question types (`noul`, `choice`, `score`) from one forward pass at full depth, with serving temperature T = 2.80.
 
-- Weights and model card: [`<hf-org>/instinct-tuned-4b`](https://huggingface.co/<hf-org>/instinct-tuned-4b)
+- Weights and model card: [`srpone/instinct-tuned-4b`](https://huggingface.co/srpone/instinct-tuned-4b)
 - Metadata: [`model.json`](model.json)
 
 ## Run
 
 ```bash
-instinct-decide --model <hf-org>/instinct-tuned-4b models/instinct-tuned-4b/examples/request.json
+instinct-decide --model srpone/instinct-tuned-4b models/instinct-tuned-4b/examples/request.json
 ```
 
 [`examples/expected.json`](examples/expected.json) holds the answer from the reference hardware.

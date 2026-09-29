@@ -45,7 +45,7 @@ class Tuned4B(Recipe):
 
 RECIPE = Tuned4B(
     name="instinct-tuned-4b",
-    hf_repo="<hf-org>/instinct-tuned-4b",
+    hf_repo="srpone/instinct-tuned-4b",
     revision=None,
     temperature=2.8,
     readout="candidate_rows",
