@@ -16,11 +16,11 @@ Instinct turns shared context and typed questions into distributions over fixed 
 
 | Model | Training | Inference | Hosted API |
 |---|---|---|---|
-| **`instinct`**<br>[Open weights](https://huggingface.co/srpone/instinct) | No additional training · frozen Qwen3.8-27B | Single-order logit readout · compiled serving | [Use via API](https://instinct.zoowork.ai/docs/#models) |
-| **`instinct-dual-4b`**<br>[Open weights](https://huggingface.co/srpone/instinct-dual-4b) | No additional training · frozen Qwen3.5-4B Instruct | Dual-order averaging · concurrent serving | [Use via API](https://instinct.zoowork.ai/docs/#models) |
-| **`instinct-tuned-4b`**<br>[Open weights](https://huggingface.co/srpone/instinct-tuned-4b) | Decision-task fine-tune of Qwen3.5-4B | Single-order logit readout | [Use via API](https://instinct.zoowork.ai/docs/#models) |
+| **`instinct`**<br>[Qwen base weights](https://huggingface.co/Qwen/Qwen3.8-27B) | No additional training · frozen Qwen3.8-27B | Single-order logit readout · compiled serving | [Use via API](https://instinct.zoowork.ai/docs/#models) |
+| **`instinct-dual-4b`**<br>[Qwen base weights](https://huggingface.co/Qwen/Qwen3.5-4B) | No additional training · frozen Qwen3.5-4B Instruct | Dual-order averaging · concurrent serving | [Use via API](https://instinct.zoowork.ai/docs/#models) |
+| **`instinct-tuned-4b`**<br>[ZooWork tuned weights](https://huggingface.co/srpone/instinct-tuned-4b) | Decision-task fine-tune of Qwen3.5-4B | Single-order logit readout | [Use via API](https://instinct.zoowork.ai/docs/#models) |
 
-Each Hugging Face repository contains the model-specific card and release details. This GitHub repository provides the shared request contract, reference runtime, examples and serving utilities.
+The first two models use unchanged Qwen weights and add inference-time decision readouts. `instinct-tuned-4b` publishes ZooWork's fine-tuned checkpoint. This GitHub repository provides the shared request contract, reference runtime, examples and serving utilities.
 
 ## Capabilities
 
