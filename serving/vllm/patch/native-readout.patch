@@ -1,0 +1,209 @@
+--- original/vllm/entrypoints/openai/completion/protocol.py
++++ optimized-v3/vllm/entrypoints/openai/completion/protocol.py
+@@ -307,7 +307,7 @@
+             stop_token_ids=self.stop_token_ids,
+             logprobs=self.logprobs,
+             ignore_eos=self.ignore_eos,
+-            max_tokens=max_tokens if not echo_without_generation else 1,
++            max_tokens=max_tokens if not echo_without_generation else 0,
+             min_tokens=self.min_tokens,
+             prompt_logprobs=prompt_logprobs,
+             skip_special_tokens=self.skip_special_tokens,
+@@ -453,6 +453,8 @@
+ 
+ 
+ class CompletionResponseChoice(OpenAIBaseModel):
++    jqv_candidate_logprobs: dict[int, float] | None = None
++    jqv_readout_position: int | None = None
+     index: int
+     text: str
+     logprobs: CompletionLogProbs | None = None
+--- original/vllm/entrypoints/openai/completion/serving.py
++++ optimized-v3/vllm/entrypoints/openai/completion/serving.py
+@@ -488,6 +488,58 @@
+         tokenizer: TokenizerLike | None,
+         request_metadata: RequestResponseMetadata,
+     ) -> CompletionResponse:
++        jqv_args = request.vllm_xargs or {}
++        if jqv_args.get("jqv_compact_legacy") == 1:
++            # Keep the legacy GPU scoring path and its exact candidate prompts.
++            # Only compact the API response after all original logprobs exist.
++            assert request.echo and request.max_tokens == 0 and not request.stream
++            assert request.logprobs == 0
++            compact_choices = []
++            total_prompt = 0
++            for result in final_res_batch:
++                assert len(result.outputs) == 1
++                output = result.outputs[0]
++                self._raise_if_error(output.finish_reason, request_id)
++                assert output.token_ids == [] and output.text == ""
++                tokens = result.prompt_token_ids
++                assert len(result.prompt_logprobs) == len(tokens)
++                candidate = tokens[-1]
++                value = result.prompt_logprobs[-1][candidate].logprob
++                compact_choices.append(CompletionResponseChoice(
++                    index=len(compact_choices), text="", token_ids=[],
++                    finish_reason=output.finish_reason,
++                    jqv_candidate_logprobs={candidate:value},
++                    jqv_readout_position=len(tokens)-2))
++                total_prompt += len(tokens)
++            usage = UsageInfo(prompt_tokens=total_prompt, completion_tokens=0,
++                              total_tokens=total_prompt)
++            request_metadata.final_usage_info = usage
++            return CompletionResponse(id=request_id, created=created_time,
++                model=model_name, choices=compact_choices, usage=usage)
++        if jqv_args.get("jqv_readout") == "native-v1":
++            assert request.echo and request.max_tokens == 0 and not request.stream
++            ids = [int(x) for x in jqv_args["jqv_candidate_ids"].split(",")]
++            native_choices = []
++            total_prompt = 0
++            for result in final_res_batch:
++                assert len(result.outputs) == 1
++                output = result.outputs[0]
++                self._raise_if_error(output.finish_reason, request_id)
++                assert output.token_ids == [] and output.text == ""
++                rows = [x for x in result.prompt_logprobs if x is not None]
++                assert len(rows) == 1 and set(rows[0]) == set(ids)
++                prompt_len = len(result.prompt_token_ids)
++                native_choices.append(CompletionResponseChoice(
++                    index=len(native_choices), text="", token_ids=[],
++                    finish_reason=output.finish_reason,
++                    jqv_candidate_logprobs={i:rows[0][i].logprob for i in ids},
++                    jqv_readout_position=prompt_len - 1))
++                total_prompt += prompt_len
++            usage = UsageInfo(prompt_tokens=total_prompt, completion_tokens=0,
++                              total_tokens=total_prompt)
++            request_metadata.final_usage_info = usage
++            return CompletionResponse(id=request_id, created=created_time,
++                                      model=model_name, choices=native_choices, usage=usage)
+         choices: list[CompletionResponseChoice] = []
+         num_prompt_tokens = 0
+         num_generated_tokens = 0
+--- original/vllm/sampling_params.py
++++ optimized-v3/vllm/sampling_params.py
+@@ -458,7 +458,7 @@
+             )
+         if not 0.0 <= self.min_p <= 1.0:
+             raise ValueError(f"min_p must be in [0, 1], got {self.min_p}.")
+-        if self.max_tokens is not None and self.max_tokens < 1:
++        if self.max_tokens is not None and (self.max_tokens < 0 or (self.max_tokens == 0 and self.prompt_logprobs is None)):
+             raise VLLMValidationError(
+                 f"max_tokens must be at least 1, got {self.max_tokens}.",
+                 parameter="max_tokens",
+--- original/vllm/v1/core/sched/scheduler.py
++++ optimized-v3/vllm/v1/core/sched/scheduler.py
+@@ -1,6 +1,9 @@
+ # SPDX-License-Identifier: Apache-2.0
+ # SPDX-FileCopyrightText: Copyright contributors to the vLLM project
+ import itertools
++import json
++import os
++import hashlib
+ import time
+ from collections import defaultdict, deque
+ from collections.abc import Iterable
+@@ -1358,6 +1361,24 @@
+                 new_token_ids, stopped = self._update_request_with_output(
+                     request, new_token_ids
+                 )
++            elif (request.sampling_params is not None and request.max_tokens == 0
++                  and request.num_computed_tokens >= request.num_prompt_tokens):
++                # Finish after the complete prefill, without appending any token.
++                assert request.num_output_tokens == 0 and generated_token_ids == []
++                assert prompt_logprobs_dict.get(req_id) is not None
++                event = {"request_id": req_id, "prompt_tokens": request.num_prompt_tokens,
++                         "computed_tokens": request.num_computed_tokens,
++                         "generated_tokens": request.num_output_tokens,
++                         "sequence_sha256": hashlib.sha256(json.dumps(request.prompt_token_ids).encode()).hexdigest(),
++                         "candidate_token_id": request.prompt_token_ids[-1],
++                         "sampler": "bypassed-prefill-only",
++                         "readout": (request.sampling_params.extra_args or {}).get("jqv_readout", "legacy"),
++                         "candidate_ids": (request.sampling_params.extra_args or {}).get("jqv_candidate_ids"),
++                         "readout_position": request.num_prompt_tokens - 1}
++                with open(os.environ["JQV_PREFILL_AUDIT"], "a") as handle:
++                    handle.write(json.dumps(event) + "\n")
++                request.status = RequestStatus.FINISHED_LENGTH_CAPPED
++                stopped = True
+             elif request.pooling_params and pooler_output is not None:
+                 # Pooling stops as soon as there is output.
+                 request.status = RequestStatus.FINISHED_STOPPED
+--- original/vllm/v1/worker/gpu_model_runner.py
++++ optimized-v3/vllm/v1/worker/gpu_model_runner.py
+@@ -2958,6 +2958,21 @@
+         logits: torch.Tensor | None,
+         spec_decode_metadata: SpecDecodeMetadata | None,
+     ) -> SamplerOutput:
++        # JQV prefill-only: compute original prompt logprobs in bookkeeping,
++        # but never call the next-token sampler and never append output tokens.
++        prefill_only = [self.requests[r].sampling_params.max_tokens == 0
++                        for r in self.input_batch.req_ids]
++        if any(prefill_only):
++            assert all(prefill_only), "mixed scoring/generation batches unsupported"
++            assert not self.use_async_scheduling
++            assert spec_decode_metadata is None and self.speculative_config is None
++            assert all(self.requests[r].sampling_params.prompt_logprobs is not None
++                       for r in self.input_batch.req_ids)
++            return SamplerOutput(
++                sampled_token_ids=torch.empty((self.input_batch.num_reqs, 0),
++                                              dtype=torch.int64, device=self.device),
++                logprobs_tensors=None,
++            )
+         # Sample the next token and get logprobs if needed.
+         sampling_metadata = self.input_batch.sampling_metadata
+         # Update output token ids with tokens sampled in last step
+@@ -3026,7 +3041,12 @@
+         if not self.use_async_scheduling:
+             # Get the valid generated tokens.
+             max_gen_len = sampled_token_ids.shape[-1]
+-            if max_gen_len == 1:
++            if max_gen_len == 0:
++                # The prefill-only path did not call the sampler.
++                assert all(self.requests[r].sampling_params.max_tokens == 0
++                           for r in self.input_batch.req_ids)
++                valid_sampled_token_ids = [[] for _ in range(num_reqs)]
++            elif max_gen_len == 1:
+                 # No spec decode tokens.
+                 valid_sampled_token_ids = self._to_list(sampled_token_ids)
+                 # Mask out the sampled tokens that should not be sampled.
+@@ -4563,6 +4583,32 @@
+                 continue
+ 
+             num_prompt_tokens = len(request.prompt_token_ids)
++            jqv_args = request.sampling_params.extra_args or {}
++            if jqv_args.get("jqv_readout") == "native-v1":
++                # Explicit private protocol: use the prompt-logprob transport only
++                # for ONE final-position next-token vector. The API exposes it as
++                # jqv_candidate_logprobs, never as ordinary prompt logprobs.
++                assert request.sampling_params.max_tokens == 0
++                ids = [int(x) for x in jqv_args["jqv_candidate_ids"].split(",")]
++                assert 2 <= len(ids) <= 26 and len(set(ids)) == len(ids)
++                assert num_prompt_logprobs == len(ids) - 1
++                if request.num_computed_tokens + num_tokens < num_prompt_tokens:
++                    continue
++                assert request.num_computed_tokens + num_tokens == num_prompt_tokens
++                req_idx = self.input_batch.req_id_to_index[req_id]
++                offset = self.query_start_loc.np[req_idx].item()
++                last_hidden = hidden_states[offset + num_tokens - 1:offset + num_tokens]
++                native_logits = self.model.compute_logits(last_hidden)
++                assert min(ids) >= 0 and max(ids) < native_logits.shape[-1]
++                native_logprobs = torch.log_softmax(native_logits.float(), dim=-1)
++                indices = torch.tensor([ids], dtype=torch.int64, device=self.device)
++                selected = native_logprobs.gather(-1, indices)
++                rank = (native_logits > native_logits[:, ids[0]:ids[0]+1]).sum(-1) + 1
++                prompt_logprobs_dict[req_id] = LogprobsTensors(
++                    indices.to(dtype=torch.int32).cpu(), selected.cpu(),
++                    rank.to(dtype=torch.int32).cpu())
++                completed_prefill_reqs.append(req_id)
++                continue
+             prompt_token_ids = torch.tensor(request.prompt_token_ids).to(
+                 self.device, non_blocking=True
+             )
+@@ -4632,7 +4678,7 @@
+         # num_prompt_logprobs_dict.
+         for req_id in completed_prefill_reqs:
+             del num_prompt_logprobs_dict[req_id]
+-            del in_progress_dict[req_id]
++            in_progress_dict.pop(req_id, None)
+ 
+         # Must synchronize the non-blocking GPU->CPU transfers.
+         if prompt_logprobs_dict:

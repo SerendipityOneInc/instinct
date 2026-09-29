@@ -1,0 +1,29 @@
+{
+  "answers": {
+    "intent": {
+      "type": "choice",
+      "choice": "track_order",
+      "probabilities": {
+        "track_order": 0.928827,
+        "cancel_order": 0.005523,
+        "refund": 0.013249,
+        "other": 0.052401
+      },
+      "confidence": 0.777032
+    },
+    "escalate": {
+      "type": "noul",
+      "noul": 0.132964
+    },
+    "urgency": {
+      "type": "score",
+      "probabilities": {
+        "0": 0.050351,
+        "1": 0.421583,
+        "2": 0.477716,
+        "3": 0.050351
+      },
+      "score": 1.528067
+    }
+  }
+}

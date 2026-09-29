@@ -1,0 +1,27 @@
+{
+  "base_version": "0.17.1",
+  "patch": "jqv-latency-v3",
+  "purpose": "Native final-position candidate readout with genuine zero decoding (prefill-only scoring); optional compact response for legacy candidate-appended scoring.",
+  "files": {
+    "vllm/entrypoints/openai/completion/protocol.py": {
+      "original_sha256": "cccbbda6227db345310490ad4112174393590687c384100fc05e703cc34286c2",
+      "patched_sha256": "16252d8c96e8478775b851446a664779e6ff80fe18fbefb32842a69a504d5396"
+    },
+    "vllm/entrypoints/openai/completion/serving.py": {
+      "original_sha256": "8b8b8c177e759f98fbc2c3587d3b01c26f335c52d34c9d57c9a1d0811e8d8c13",
+      "patched_sha256": "d70943bac7562c889d8cc1ca1e7db20c67c944c4f906673b7f79794e482bd467"
+    },
+    "vllm/sampling_params.py": {
+      "original_sha256": "414b8fc899c2ad6997bca3fa09d41ed4a2e0902af99ff36ea032670e9079cb6a",
+      "patched_sha256": "bcffd6264531bce14735954ad178cf400f203e61be7a3889b92e13f1052ac7c1"
+    },
+    "vllm/v1/core/sched/scheduler.py": {
+      "original_sha256": "8231254faa2d2aaeccff2cff309ff60ea90ce7194a81edaddcf6aa806b9f98f1",
+      "patched_sha256": "710d5aa2f2dec40396d0cbc142344c4a01588851bed452fa514057775171681d"
+    },
+    "vllm/v1/worker/gpu_model_runner.py": {
+      "original_sha256": "9e5e02842a5442d955014fc7b1227a69043b462463d05ed8f46e9f4ae48dd725",
+      "patched_sha256": "43b8b90c4182420648e0331b8d1138d401d176c1c6e1bd294f1739ad6bcfd69e"
+    }
+  }
+}

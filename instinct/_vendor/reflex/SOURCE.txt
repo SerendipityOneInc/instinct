@@ -1,0 +1,18 @@
+Reflex (System One decision model)
+Copyright (c) 2026 Kshetrajna Raghavan, MIT License (see LICENSE)
+Repository: https://github.com/kshetrajna12/reflex
+Revision:   b77f03bab8e00d7319e64550e062c1eac8111875
+
+Files taken:
+  src/reflex/prompt.py  ->  prompt.py
+
+Modifications (prompt text and ordering logic are unchanged):
+  * the pydantic question models from reflex.schema are replaced by plain
+    dataclasses with the same field names (NoulQuestion, ChoiceQuestion,
+    ScoreQuestion), so no pydantic dependency is needed;
+  * the "compact" prompt style, the optimiser hooks and the non-chat mode are
+    removed; only prompt_style "markdown" with ChatML and the empty think
+    prefix is kept;
+  * build_branches() keeps the markdown path only; orders are still drawn from
+    random.Random(f"{seed}:{qid}") with seed 0.
+Nothing from the Reflex engine, training, calibration or serving code is used.

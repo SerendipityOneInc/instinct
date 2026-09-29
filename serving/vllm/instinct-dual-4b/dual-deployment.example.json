@@ -1,0 +1,16 @@
+{
+  "schema_version": 2,
+  "public_model_id": "instinct-dual-4b",
+  "served_name": "instinct-dual-4b-backend",
+  "model_path": "/path/to/Qwen3.5-4B",
+  "model_revision": "851bf6e806efd8d0a36b00ddf55e13ccb7b8cd0a",
+  "reflex_revision": "b77f03bab8e00d7319e64550e062c1eac8111875",
+  "execution_mode": "eager",
+  "readout": "native-padded",
+  "backend_batch_size": 1,
+  "max_model_len": 262144,
+  "max_num_batched_tokens": 2048,
+  "max_num_seqs": 32,
+  "gpu_memory_utilization": 0.75,
+  "prefix_caching": false
+}

@@ -1,0 +1,11 @@
+Instinct
+Copyright 2026 <copyright holder>
+
+This product includes software from APUS-OpenJev-v1
+(https://huggingface.co/apus-ailab/APUS-OpenJev-v1), licensed under the MIT
+License: see instinct/_vendor/apus_runtime/LICENSE.
+
+This product includes software from Reflex
+(https://github.com/kshetrajna12/reflex, revision b77f03b), Copyright (c) 2026
+Kshetrajna Raghavan, licensed under the MIT License. See
+instinct/_vendor/reflex/LICENSE.

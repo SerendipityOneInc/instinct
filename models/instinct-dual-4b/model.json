@@ -1,0 +1,15 @@
+{
+  "name": "instinct-dual-4b",
+  "hf_repo": "Qwen/Qwen3.5-4B",
+  "base_model": "Qwen/Qwen3.5-4B",
+  "prompt_version": "reflex-markdown@b77f03b",
+  "temperature": 1.0,
+  "full_depth": 32,
+  "question_types": [
+    "noul",
+    "choice",
+    "score"
+  ],
+  "reference_hardware": "1x H200, bf16, transformers 5.16.1",
+  "canary_tolerance": 0.02
+}
