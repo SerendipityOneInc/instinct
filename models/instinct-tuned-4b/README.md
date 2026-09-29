@@ -32,3 +32,7 @@ JevBench public 231 at full depth, bf16, scored with the official JevBench clien
 | easy | 48/48 |
 | standard | 69/72 |
 | hard | 81/111 |
+
+---
+
+Part of the Instinct model family by [ZooWork](https://zoowork.ai) · [instinct.zoowork.ai](https://instinct.zoowork.ai/)

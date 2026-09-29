@@ -1,6 +1,8 @@
 # Instinct
 
-Instinct models are **decision models**. Given a shared state and a question with fixed candidates, they return a probability per candidate from one forward pass per option order, with no text generation.
+**[ZooWork](https://zoowork.ai)** · [Instinct homepage](https://instinct.zoowork.ai/)
+
+Instinct is the decision-model family built by [ZooWork](https://zoowork.ai). Instinct models are **decision models**. Given a shared state and a question with fixed candidates, they return a probability per candidate from one forward pass per option order, with no text generation.
 
 This repository holds one shared runtime, the `instinct` Python package, and one directory per released model. Each model is a *recipe* (`instinct/recipes/`): its weights, prompt, label tokens, readout, option orders and temperature. Two of the three models use the untrained Qwen weights directly; their recipes pin the Qwen repository and revision.
 
@@ -94,6 +96,10 @@ Each model's README describes its prompt exactly.
 ```bash
 pip install -e ".[test]" && pytest -q     # CPU only
 ```
+
+## About
+
+Instinct is developed by [ZooWork](https://zoowork.ai), which turns your expertise into an AI agent in minutes. Product page, demos and updates: [instinct.zoowork.ai](https://instinct.zoowork.ai/).
 
 ## License
 
