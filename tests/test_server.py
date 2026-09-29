@@ -80,7 +80,9 @@ def test_invalid_json(server):
 
 def test_deeply_nested_json(server):
     data = b"[" * 100000 + b"]" * 100000
-    assert post(server[0], data, {"Content-Length": str(len(data))})[0] == 400
+    # Python < 3.14 raises RecursionError while parsing (400); 3.14 parses it and
+    # the body is rejected as a non-object request (422). Either way, no crash.
+    assert post(server[0], data, {"Content-Length": str(len(data))})[0] in (400, 422)
 
 
 def test_question_cap(server):
