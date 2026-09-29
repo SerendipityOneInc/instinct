@@ -63,12 +63,12 @@ Reporting-only results on all 231 published JevBench tasks:
 | Production model | Correct | Accuracy | Local p50 | Local p95 |
 |---|---:|---:|---:|---:|
 | **`instinct`** | **202/231** | **87.45%** | 36.6 ms | 243.2 ms |
-| **`instinct-tuned-4b`** | **198/231** | **85.71%** | Not yet published | Not yet published |
+| **`instinct-tuned-4b`** | **198/231** | **85.71%** | 62 ms | Not yet published |
 | **`instinct-dual-4b`** | **190/231** | **82.25%** | 40.7–41.2 ms | 78.9–82.0 ms |
 
 All reported runs completed 231/231 items. These are public-set diagnostics—not held-out scores, official full-suite ranks, or full JevBench Intelligence and Calibration scores. The public subset has no judge tier and was consulted during development.
 
-Latency uses warmed, serial, node-local requests and includes the local serving stack while excluding Internet, TLS and public-gateway overhead. The 27B values pool three complete passes; dual-4B values show the range across three passes. The serving paths differ, so latency is an operational measurement rather than a controlled architecture comparison or SLO. We do not substitute a result from another 4B checkpoint for tuned-4B.
+Latency uses warmed, serial, node-local requests and includes the local serving stack while excluding Internet, TLS and public-gateway overhead. The 27B values pool three complete passes; dual-4B values show the range across three passes. Tuned-4B's 62 ms p50 comes from its previous node-local deployment; a matching local p95 has not been published. A later public API run measured 152.1 ms p50 and 201.5 ms p95 end to end, including network, TLS and gateway time, so those values are not mixed into the local columns. The serving paths differ, making these operational measurements rather than a controlled architecture comparison or SLO.
 
 For the open tuned model, the split is easy 48/48, standard 69/72 and hard 81/111. See its [release notes](models/instinct-tuned-4b/README.md) and the [27B recipe notes](reference/qwen3.8-27b/README.md) for artifact-specific conditions.
 
