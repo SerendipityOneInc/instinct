@@ -21,7 +21,7 @@ instinct-decide --model instinct-tuned-4b models/instinct-tuned-4b/examples/requ
 python scripts/check_canaries.py --model instinct-tuned-4b
 ```
 
-On 1x H200 with bf16 and `transformers==5.16.1`, the logits match exactly (`canary_tolerance` 0). On other hardware, expect small differences.
+On the reference environment (1x H200, bf16, torch 2.13, `transformers==5.16.1`) the logits match production exactly. On other GPUs, bf16 kernels differ slightly: on an A10 in the NGC `pytorch:25.06-py3` container all 14 predictions match and the largest logit difference is 0.25 (about two bf16 steps at these magnitudes). `canary_tolerance` in `model.json` is 0.5 logits.
 
 ## Results
 

@@ -11,6 +11,7 @@ A 4B decision model with no weights of our own: the frozen, untrained [`Qwen/Qwe
 - The shared state and each question branch are tokenized separately and concatenated, so the state prefix is identical across branches.
 - Options are lettered `A`, `B`, ... and the candidate tokens are the bare letters. `noul` is shown as `A. yes: ...` / `B. no: ...` (your `true` / `false` wording when supplied).
 - Two orders per question: the order you gave, then one seeded shuffle (`random.Random("0:<question id>")`; the swapped order for two-option questions and `noul`). Each order gives a softmax over its letters at T = 1; probabilities are mapped back to your option ids and averaged.
+- `score` questions take 2–10 levels (the Reflex limit); `choice` questions take 2–16 options.
 - Input is never truncated: a question branch over 4096 tokens or a prompt over the 262144-token context is rejected.
 
 ## Run
@@ -29,7 +30,7 @@ Weights are downloaded from `Qwen/Qwen3.5-4B` at the pinned revision. Reference 
 python scripts/check_canaries.py --model instinct-dual-4b
 ```
 
-Production serves this model with vLLM and our patched readout; this repository runs a plain Transformers path. The prompts and label tokens are identical, and all 18 questions give the same answer. Probabilities can differ by up to 0.02 (`canary_tolerance` in `model.json`), because bf16 kernels differ between the two paths. On 2026-09-29 the largest difference was 0.012.
+Production serves this model with vLLM and our patched readout; this repository runs a plain Transformers path. The prompts and label tokens are identical, and all 18 questions give the same answer. Probabilities can differ by up to 0.02 (`canary_tolerance` in `model.json`), because bf16 kernels differ between the two paths. On 2026-09-29 the largest difference was 0.012 on an H200 and 0.015 on an A10 (NGC `pytorch:25.06-py3`).
 
 ## Results
 

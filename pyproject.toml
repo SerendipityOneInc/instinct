@@ -14,7 +14,7 @@ dependencies = []
 
 [project.optional-dependencies]
 gpu = [
-    "torch>=2.8",
+    "torch>=2.8.0a0",
     "transformers==5.16.1",
     "huggingface_hub",
     "accelerate",

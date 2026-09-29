@@ -27,12 +27,25 @@ To add a model, see [`models/TEMPLATE`](models/TEMPLATE).
 
 ## Install
 
-A CUDA GPU is required. The runtime is verified on one H200 in bf16.
+A CUDA GPU with bf16 support is required (Ampere or newer). The `flash-linear-attention` Triton kernels are compiled at first use, so the environment also needs a C compiler.
+
+The recommended environment is an [NGC PyTorch container](https://catalog.ngc.nvidia.com/orgs/nvidia/containers/pytorch), which ships a matched torch, CUDA and compiler. Install on top of it and keep its torch; the `gpu` extra accepts NGC's `2.8.0a0` builds, so pip does not replace it:
 
 ```bash
+docker run --gpus all --shm-size=8g -it nvcr.io/nvidia/pytorch:25.06-py3
 git clone https://github.com/SerendipityOneInc/instinct && cd instinct
 pip install -e ".[gpu]"
+python scripts/check_canaries.py --model instinct-dual-4b   # checks the install end to end
 ```
+
+Outside a container, use a Python environment with torch 2.8 or newer and a C compiler, then `pip install -e ".[gpu]"`. Slim images without `gcc` (for example the `pytorch/pytorch:*-runtime` tags) install fine but fail on the first forward pass with `Failed to find C compiler`.
+
+Tested environments:
+
+| Environment | GPU | Result |
+|---|---|---|
+| torch 2.13.0+cu129, triton 3.7.1 | H200 | reference: `instinct-tuned-4b` canaries match production exactly |
+| NGC `pytorch:25.06-py3` (torch 2.8.0a0, CUDA 12.9) | A10 | all tests pass; canaries within tolerance |
 
 Layer execution is verified against `transformers==5.16.1`, and the runtime refuses to start with any other version unless `INSTINCT_ALLOW_UNVERIFIED_TRANSFORMERS=1` is set. `flash-linear-attention` provides the Qwen3.5 linear-attention kernels.
 

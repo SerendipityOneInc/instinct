@@ -11,6 +11,7 @@ revision 851bf6e806efd8d0a36b00ddf55e13ccb7b8cd0a; they are only checked when
 that tokenizer is present in the local Hugging Face cache.
 """
 
+import os
 import hashlib
 import json
 from pathlib import Path
@@ -310,9 +311,16 @@ GOLDEN = json.loads(r"""
  }
 }""")
 
+def _hub_cache():
+    if os.environ.get("HF_HUB_CACHE"):
+        return Path(os.environ["HF_HUB_CACHE"])
+    if os.environ.get("HF_HOME"):
+        return Path(os.environ["HF_HOME"]) / "hub"
+    return Path.home() / ".cache/huggingface/hub"
+
+
 SNAPSHOT = (
-    Path.home() / ".cache/huggingface/hub/models--Qwen--Qwen3.5-4B/snapshots"
-    / "851bf6e806efd8d0a36b00ddf55e13ccb7b8cd0a"
+    _hub_cache() / "models--Qwen--Qwen3.5-4B/snapshots" / "851bf6e806efd8d0a36b00ddf55e13ccb7b8cd0a"
 )
 
 

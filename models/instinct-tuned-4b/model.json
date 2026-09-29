@@ -11,5 +11,5 @@
     "score"
   ],
   "reference_hardware": "1x H200, bf16, transformers 5.16.1",
-  "canary_tolerance": 0.0
+  "canary_tolerance": 0.5
 }
