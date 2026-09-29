@@ -1,6 +1,6 @@
-# reference-qwen3.8-27b (reference baseline)
+# `instinct` 27B reproducibility recipe
 
-This is a reference baseline, not a released Instinct model. It is the untrained [`Qwen/Qwen3.8-27B`](https://huggingface.co/Qwen/Qwen3.8-27B) at the pinned revision `1d4bf0f2ff6012fd82039f2fa52739d0dd7c60c0`, behind our jqv decision prompt and readout, provided for comparison with `instinct-tuned-4b`. There are no weights of our own and no Hugging Face repository for it; the weights are downloaded from Qwen. It serves all three question types (`noul`, `choice`, `score`) from one forward pass per question, with a single option order.
+This directory records the reproducible frozen-model recipe underlying the hosted `instinct` model led by [Rayrain](https://github.com/rayrain-srp). It uses [`Qwen/Qwen3.8-27B`](https://huggingface.co/Qwen/Qwen3.8-27B) at the pinned revision `1d4bf0f2ff6012fd82039f2fa52739d0dd7c60c0`, behind ZooWork's jqv decision prompt and readout. There are no separate ZooWork weights for this line; the recipe downloads the Qwen weights directly. It serves all three question types (`noul`, `choice`, `score`) from one forward pass per question, with a single option order.
 
 - Prompt: jqv prompt format version 1, hash `4f85a0b34776`. The system message and document are the prefix. The question, lettered options and the assistant turn (thinking disabled) up to `Answer:` are the suffix.
 - Readout: logits of the option-letter tokens (` A`, ` B`, ...) at the last position, softmax over the candidates at T = 1.0. The output is uncalibrated.

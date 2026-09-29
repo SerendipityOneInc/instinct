@@ -6,31 +6,32 @@
 [![Tests](https://github.com/SerendipityOneInc/instinct/actions/workflows/test.yml/badge.svg)](https://github.com/SerendipityOneInc/instinct/actions/workflows/test.yml)
 [![Views](https://hits.sh/github.com/SerendipityOneInc/instinct.svg?style=flat-square&label=views)](https://hits.sh/github.com/SerendipityOneInc/instinct/)
 
-**An open decision model from the [ZooWork](https://zoowork.ai) team at Serendipity One Inc.**
+**An open decision-model family from the [ZooWork](https://zoowork.ai) team at Serendipity One Inc.**
 
 [Hosted API](https://instinct.zoowork.ai/) · [API documentation](https://instinct.zoowork.ai/docs/) · [Model weights](https://huggingface.co/srpone/instinct-tuned-4b)
 
-Instinct turns shared context and typed questions into distributions over fixed candidates. It supports binary judgments, categorical choices and ordered scores without generating text. Each question is answered by reading candidate-token logits from a single forward pass per option order.
+Instinct turns shared context and typed questions into distributions over fixed candidates. It supports binary judgments, categorical choices and ordered scores without generating text. All three production models share the same API and return zero generated output tokens.
 
-This repository releases **`instinct-tuned-4b`**, a post-trained Qwen3.5-4B decision model, together with its reference runtime, examples and reproducibility canaries. It also contains **`reference-qwen3.8-27b`**, an untrained comparison baseline—not a second released Instinct model.
+## Model family
 
-## Model release
+| Model ID | Model lead | Structure | Best for | Input price / 1M tokens |
+|---|---|---|---|---:|
+| **`instinct`** | [Rayrain](https://github.com/rayrain-srp) | Frozen Qwen3.8-27B · single order · native compiled readout | Highest measured public-set accuracy | $0.03 |
+| **`instinct-dual-4b`** | [Siqiao](https://github.com/siqiao-srp) | Frozen Qwen3.5-4B Instruct · two concurrent option orders | Order robustness and low cost | $0.01 |
+| **`instinct-tuned-4b`** | [Sharplee](https://github.com/sharplee-srp) | Fine-tuned Qwen3.5-4B · single order | Open post-trained 4B release | $0.01 |
 
-| | `instinct-tuned-4b` | `reference-qwen3.8-27b` |
-|---|---|---|
-| Status | **Released Instinct model** | Reference baseline only |
-| Directory | [`models/instinct-tuned-4b`](models/instinct-tuned-4b) | [`reference/qwen3.8-27b`](reference/qwen3.8-27b) |
-| Weights | [`srpone/instinct-tuned-4b`](https://huggingface.co/srpone/instinct-tuned-4b) | [`Qwen/Qwen3.8-27B`](https://huggingface.co/Qwen/Qwen3.8-27B) |
-| Pinned revision | `50546bf18c4f11115dc92bc1ce82c75cfc2968db` | `1d4bf0f2ff6012fd82039f2fa52739d0dd7c60c0` |
-| Training | Merged LoRA fine-tune of Qwen3.5-4B | Frozen, untrained Qwen3.8-27B |
-| Prompt | `instinct.prompt.v1` | jqv prompt v1, hash `4f85a0b34776` |
-| Readout | Candidate LM-head rows at full depth | Full-head option-letter logits |
-| Orders / temperature | 1 / 2.80 calibrated | 1 / 1.0 uncalibrated |
-| Prompt limit | 8,192 tokens, no truncation | 32,768 tokens, no truncation |
-| Question types | `noul`, `choice`, `score` | `noul`, `choice`, `score` |
-| Reference hardware | 1× H200, BF16, Transformers 5.16.1 | 1× H200, BF16, Transformers 5.16.1 |
+These models were developed within the ZooWork team. The model-lead column records the primary contributor for each line; the release, API and surrounding infrastructure are team work.
 
-A model is defined by a recipe in [`instinct/recipes/`](instinct/recipes/): pinned weights, prompt, candidate labels, readout, option orders and temperature. Each model directory includes metadata, an example request and expected response, and canary outputs captured from the reference deployment.
+### Open-source artifacts
+
+This repository currently packages the open `instinct-tuned-4b` weights contract and local runtime, plus the reproducible frozen recipe used by the hosted `instinct` 27B model:
+
+| Hosted model | Repository artifact | Weights | Purpose |
+|---|---|---|---|
+| `instinct-tuned-4b` | [`models/instinct-tuned-4b`](models/instinct-tuned-4b) | [`srpone/instinct-tuned-4b`](https://huggingface.co/srpone/instinct-tuned-4b) | Released post-trained model, examples and canaries |
+| `instinct` | [`reference/qwen3.8-27b`](reference/qwen3.8-27b) | [`Qwen/Qwen3.8-27B`](https://huggingface.co/Qwen/Qwen3.8-27B) | Frozen 27B recipe and serving-parity reference |
+
+The hosted `instinct-dual-4b` implementation is maintained in ZooWork's production deployment stack and is not packaged in this model-weight release. A repository recipe is defined by pinned weights, prompt, candidate labels, readout, option orders and temperature under [`instinct/recipes/`](instinct/recipes/).
 
 ## Capabilities
 
@@ -43,18 +44,19 @@ A model is defined by a recipe in [`instinct/recipes/`](instinct/recipes/): pinn
 
 ## Measured results
 
-JevBench public subset, all 231 published tasks, BF16 on one NVIDIA H200:
+Reporting-only results on all 231 published JevBench tasks:
 
-| Split | `instinct-tuned-4b` | `reference-qwen3.8-27b` |
-|---|---:|---:|
-| Easy | 48/48 (100.00%) | 48/48 (100.00%) |
-| Standard | 69/72 (95.83%) | 69/72 (95.83%) |
-| Hard | 81/111 (72.97%) | 84/111 (75.68%) |
-| **Total** | **198/231 (85.71%)** | **201/231 (87.01%)** |
+| Production model | Correct | Accuracy | Local p50 | Local p95 |
+|---|---:|---:|---:|---:|
+| **`instinct`** | **202/231** | **87.45%** | 36.6 ms | 243.2 ms |
+| **`instinct-tuned-4b`** | **198/231** | **85.71%** | Not yet published | Not yet published |
+| **`instinct-dual-4b`** | **190/231** | **82.25%** | 40.7–41.2 ms | 78.9–82.0 ms |
 
-Both runs evaluated 231/231 items. These are public-set diagnostics, not held-out scores, official full-suite ranks, or full JevBench Intelligence and Calibration scores: the public subset has no judge tier, and those axes require additional data. The public items were used for model selection during development. The tuned model was scored with the official JevBench client in the original option order; the baseline result comes from our evaluation harness. Their probability scales also differ: the tuned model uses `T=2.80`, while the baseline is uncalibrated at `T=1.0`.
+All reported runs completed 231/231 items. These are public-set diagnostics—not held-out scores, official full-suite ranks, or full JevBench Intelligence and Calibration scores. The public subset has no judge tier and was consulted during development.
 
-See the [`instinct-tuned-4b` release notes](models/instinct-tuned-4b/README.md) and [reference baseline notes](reference/qwen3.8-27b/README.md) for the exact evaluation conditions.
+Latency uses warmed, serial, node-local requests and includes the local serving stack while excluding Internet, TLS and public-gateway overhead. The 27B values pool three complete passes; dual-4B values show the range across three passes. The serving paths differ, so latency is an operational measurement rather than a controlled architecture comparison or SLO. We do not substitute a result from another 4B checkpoint for tuned-4B.
+
+For the open tuned model, the split is easy 48/48, standard 69/72 and hard 81/111. See its [release notes](models/instinct-tuned-4b/README.md) and the [27B recipe notes](reference/qwen3.8-27b/README.md) for artifact-specific conditions.
 
 ## Installation
 
@@ -77,7 +79,7 @@ instinct-decide --model instinct-tuned-4b \
   models/instinct-tuned-4b/examples/request.json
 ```
 
-To run the comparison baseline instead:
+To reproduce the frozen 27B `instinct` recipe locally:
 
 ```bash
 instinct-decide --model reference-qwen3.8-27b \
@@ -159,7 +161,7 @@ curl https://api.zoowork.ai/v1/systemone \
   }'
 ```
 
-The hosted product offers all three model IDs behind the same typed API. This repository's open-model release remains `instinct-tuned-4b`; consult the live API documentation for current availability and pricing.
+The hosted product offers all three model IDs behind the same typed API. The repository artifacts currently cover tuned-4B and the frozen 27B recipe as described above; consult the live API documentation for current availability and pricing.
 
 ## Request and response contract
 
@@ -224,43 +226,6 @@ For each question, the selected recipe:
 
 `instinct-tuned-4b` uses one option order and applies only the candidate LM-head rows to the full-depth, final-norm hidden state. The prompt bytes are part of the trained model contract: changing [`instinct/prompt.py`](instinct/prompt.py) can change the model's output.
 
-## Reproducibility
-
-Weights and runtime dependencies are pinned in the recipes and package metadata. Verify an installation against the recorded reference outputs:
-
-```bash
-python scripts/check_canaries.py --model instinct-tuned-4b
-python scripts/check_canaries.py --model reference-qwen3.8-27b
-```
-
-- `instinct-tuned-4b`: 14 synthetic requests; predictions must agree and every probability must remain within `0.02` after the `T=2.80` softmax.
-- `reference-qwen3.8-27b`: 15 requests containing 18 questions; predictions must agree and probabilities may differ by at most `0.05` across the Transformers and patched-vLLM BF16 paths.
-
-An inexact raw-logit match alone is not a failure because GPU kernels can shift BF16 logits slightly. [`scripts/parity_check.py`](scripts/parity_check.py) provides item-level logit comparison, while [`scripts/compare_endpoint.py`](scripts/compare_endpoint.py) compares a local model with a running System One endpoint.
-
-The optional [`serving/vllm`](serving/vllm) path pins vLLM 0.17.1 and implements native prefill-only candidate readout for the 27B reference baseline. The Transformers path under `instinct/` remains the reference implementation.
-
-## Limitations
-
-- Public JevBench results are development diagnostics, not held-out evidence.
-- Only one H200/BF16 reference setup is verified; other GPUs, kernels and dtypes may shift probabilities.
-- Local inference requires a CUDA GPU. Only the test suite is CPU-only.
-- Inputs over the recipe's prompt limit are rejected rather than truncated.
-- Both included recipes use one option order. The 27B baseline probabilities are uncalibrated.
-- The bundled HTTP server is intended for local reference use, not direct production exposure.
-- See the [model card](https://huggingface.co/srpone/instinct-tuned-4b) for training details and model-specific limitations.
-
-## Repository layout
-
-```text
-instinct/                    reference runtime and model recipes
-models/instinct-tuned-4b/    released model metadata, examples and canaries
-reference/qwen3.8-27b/       untrained comparison baseline
-scripts/                     parity, canary and endpoint checks
-serving/vllm/                optional Apache-2.0 vLLM serving path
-tests/                       CPU test suite
-```
-
 ## Testing and contributing
 
 ```bash
@@ -274,12 +239,12 @@ Issues and pull requests are welcome; see [`CONTRIBUTING.md`](CONTRIBUTING.md). 
 
 ```bibtex
 @software{instinct2026,
-  title   = {Instinct: An Open Decision Model},
+  title   = {Instinct: An Open Decision-Model Family},
   author  = {{ZooWork Team, Serendipity One Inc.}},
   year    = {2026},
   version = {0.1.0},
   url     = {https://github.com/SerendipityOneInc/instinct},
-  note    = {Model: srpone/instinct-tuned-4b}
+  note    = {Models: instinct, instinct-dual-4b, instinct-tuned-4b}
 }
 ```
 
@@ -293,5 +258,5 @@ The vLLM-derived serving files are also Apache-2.0; see [`serving/vllm/LICENSE`]
 
 - [Reflex](https://github.com/kshetrajna12/reflex) — an open implementation of typed, candidate-scored decision models.
 - [JevBench](https://github.com/fstandhartinger/jevbench) — the public benchmark used for the diagnostic results above.
-- [Qwen](https://github.com/QwenLM/Qwen3) — the open model family behind the released model and reference baseline.
+- [Qwen](https://github.com/QwenLM/Qwen3) — the open model family behind the Instinct models.
 - [vLLM](https://github.com/vllm-project/vllm) — the serving engine used by the optional optimized path.
