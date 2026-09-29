@@ -1,4 +1,4 @@
-# Instinct
+# ZooWork - Instinct model
 
 [![ZooWork](https://img.shields.io/badge/built%20by-ZooWork-6C47FF?style=flat-square)](https://zoowork.ai)
 [![Apache-2.0](https://img.shields.io/badge/license-Apache--2.0-3DA639?style=flat-square)](LICENSE)
