@@ -12,7 +12,7 @@ This repository holds one shared runtime, the `instinct` Python package, and one
 | instinct-dual-4b | [`models/instinct-dual-4b`](models/instinct-dual-4b) | [`Qwen/Qwen3.5-4B`](https://huggingface.co/Qwen/Qwen3.5-4B) @ `851bf6e`, untrained | 2 | 1 (uncalibrated) | noul, choice, score |
 | instinct-tuned-4b | [`models/instinct-tuned-4b`](models/instinct-tuned-4b) | [`srpone/instinct-tuned-4b`](https://huggingface.co/srpone/instinct-tuned-4b) (LoRA fine-tune of Qwen3.5-4B, merged) | 1 | 2.80 (calibrated) | noul, choice, score |
 
-The HF repositories `srpone/instinct` and `srpone/instinct-dual-4b` hold model cards only.
+`instinct` and `instinct-dual-4b` download the Qwen weights directly; their HF model cards (`srpone/instinct`, `srpone/instinct-dual-4b`) are not published yet.
 
 Each model directory contains:
 
@@ -36,7 +36,11 @@ Layer execution is verified against `transformers==5.16.1`, and the runtime refu
 
 ## Use
 
+Every command takes the model name: `instinct`, `instinct-dual-4b` or `instinct-tuned-4b`.
+
 ```bash
+instinct-decide --model instinct models/instinct/examples/request.json
+instinct-decide --model instinct-dual-4b models/instinct-dual-4b/examples/request.json
 instinct-decide --model instinct-tuned-4b models/instinct-tuned-4b/examples/request.json
 instinct-serve  --model instinct-tuned-4b --port 8008
 # --weights <local dir or HF repo> overrides where the weights come from
@@ -46,7 +50,7 @@ curl -s localhost:8008/v1/systemone -d @models/instinct-tuned-4b/examples/reques
 ```python
 from instinct import InstinctModel, answer
 
-model = InstinctModel.from_pretrained("instinct-tuned-4b")
+model = InstinctModel.from_pretrained("instinct-tuned-4b")  # or "instinct", "instinct-dual-4b"
 result = answer(model, {
     "state": {"customer": "My package says delivered but it is not here."},
     "questions": {
@@ -76,7 +80,7 @@ For single records in the lower-level format (`id`, `group_id`, `state`, `instru
 ### How the runtime scores a question
 
 1. The recipe renders the question into one prompt per option order and assigns a label token to each candidate.
-2. One forward pass per order reads the label-token logits at the readout position. `instinct-tuned-4b` applies only the candidate LM-head rows to the final-norm hidden state; the other two read the full head at the last position.
+2. One forward pass per order reads the label-token logits at the readout position. `instinct` and `instinct-dual-4b` read the full head at the last position; `instinct-tuned-4b` applies only the candidate LM-head rows to the final-norm hidden state.
 3. Each order's logits are divided by the recipe's temperature and softmaxed, mapped back to candidate ids, and averaged over orders.
 
 Each model's README describes its prompt exactly.
