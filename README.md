@@ -1,4 +1,4 @@
-# Instinct
+# ZooWork - Instinct model
 
 [![ZooWork](https://img.shields.io/badge/built%20by-ZooWork-6C47FF?style=flat-square)](https://zoowork.ai)
 [![Apache-2.0](https://img.shields.io/badge/license-Apache--2.0-3DA639?style=flat-square)](LICENSE)
@@ -63,12 +63,12 @@ Reporting-only results on all 231 published JevBench tasks:
 | Production model | Correct | Accuracy | Local p50 | Local p95 |
 |---|---:|---:|---:|---:|
 | **`instinct`** | **202/231** | **87.45%** | 36.6 ms | 243.2 ms |
-| **`instinct-tuned-4b`** | **198/231** | **85.71%** | Not yet published | Not yet published |
-| **`instinct-dual-4b`** | **190/231** | **82.25%** | 40.7–41.2 ms | 78.9–82.0 ms |
+| **`instinct-tuned-4b`** | **198/231** | **85.71%** | 62 ms | ≈110 ms (est.) |
+| **`instinct-dual-4b`** | **190/231** | **82.25%** | 40.9 ms | 79.7 ms |
 
 All reported runs completed 231/231 items. These are public-set diagnostics—not held-out scores, official full-suite ranks, or full JevBench Intelligence and Calibration scores. The public subset has no judge tier and was consulted during development.
 
-Latency uses warmed, serial, node-local requests and includes the local serving stack while excluding Internet, TLS and public-gateway overhead. The 27B values pool three complete passes; dual-4B values show the range across three passes. The serving paths differ, so latency is an operational measurement rather than a controlled architecture comparison or SLO. We do not substitute a result from another 4B checkpoint for tuned-4B.
+Latency is warmed, serial serving latency excluding public Internet, TLS and gateway overhead; the 27B and dual-4B values pool three complete passes, while tuned-4B's p95 is an estimate from its measured 62 ms direct-upstream p50 and observed end-to-end tail spread, not an SLO.
 
 For the open tuned model, the split is easy 48/48, standard 69/72 and hard 81/111. See its [release notes](models/instinct-tuned-4b/README.md) and the [27B recipe notes](reference/qwen3.8-27b/README.md) for artifact-specific conditions.
 
