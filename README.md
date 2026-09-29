@@ -8,30 +8,19 @@
 
 **An open decision-model family from the [ZooWork](https://zoowork.ai) team at Serendipity One Inc.**
 
-[Hosted API](https://instinct.zoowork.ai/) · [API documentation](https://instinct.zoowork.ai/docs/) · [Model weights](https://huggingface.co/srpone/instinct-tuned-4b)
+[Models on Hugging Face](https://huggingface.co/srpone) · [Hosted API](https://instinct.zoowork.ai/) · [API documentation](https://instinct.zoowork.ai/docs/)
 
-Instinct turns shared context and typed questions into distributions over fixed candidates. It supports binary judgments, categorical choices and ordered scores without generating text. All three production models share the same API and return zero generated output tokens.
+Instinct turns shared context and typed questions into distributions over fixed candidates. It supports binary judgments, categorical choices and ordered scores without generating text. All three models are open on Hugging Face, share the same typed API, and return zero generated output tokens.
 
 ## Model family
 
-| Model ID | Model lead | Structure | Best for | Input price / 1M tokens |
-|---|---|---|---|---:|
-| **`instinct`** | [Rayrain](https://github.com/rayrain-srp) | Frozen Qwen3.8-27B · single order · native compiled readout | Highest measured public-set accuracy | $0.03 |
-| **`instinct-dual-4b`** | [Siqiao](https://github.com/siqiao-srp) | Frozen Qwen3.5-4B Instruct · two concurrent option orders | Order robustness and low cost | $0.01 |
-| **`instinct-tuned-4b`** | [Sharplee](https://github.com/sharplee-srp) | Fine-tuned Qwen3.5-4B · single order | Open post-trained 4B release | $0.01 |
-
-These models were developed within the ZooWork team. The model-lead column records the primary contributor for each line; the release, API and surrounding infrastructure are team work.
-
-### Open-source artifacts
-
-This repository currently packages the open `instinct-tuned-4b` weights contract and local runtime, plus the reproducible frozen recipe used by the hosted `instinct` 27B model:
-
-| Hosted model | Repository artifact | Weights | Purpose |
+| Model ID | Open weights | Base model | Inference structure |
 |---|---|---|---|
-| `instinct-tuned-4b` | [`models/instinct-tuned-4b`](models/instinct-tuned-4b) | [`srpone/instinct-tuned-4b`](https://huggingface.co/srpone/instinct-tuned-4b) | Released post-trained model, examples and canaries |
-| `instinct` | [`reference/qwen3.8-27b`](reference/qwen3.8-27b) | [`Qwen/Qwen3.8-27B`](https://huggingface.co/Qwen/Qwen3.8-27B) | Frozen 27B recipe and serving-parity reference |
+| **`instinct`** | [`srpone/instinct`](https://huggingface.co/srpone/instinct) | Qwen3.8-27B | Single option order · native compiled readout |
+| **`instinct-dual-4b`** | [`srpone/instinct-dual-4b`](https://huggingface.co/srpone/instinct-dual-4b) | Qwen3.5-4B Instruct | Two concurrent option orders · averaged probabilities |
+| **`instinct-tuned-4b`** | [`srpone/instinct-tuned-4b`](https://huggingface.co/srpone/instinct-tuned-4b) | Qwen3.5-4B | Fine-tuned · single option order |
 
-The hosted `instinct-dual-4b` implementation is maintained in ZooWork's production deployment stack and is not packaged in this model-weight release. A repository recipe is defined by pinned weights, prompt, candidate labels, readout, option orders and temperature under [`instinct/recipes/`](instinct/recipes/).
+Each Hugging Face repository contains the model-specific card and release details. This GitHub repository provides the shared request contract, reference runtime, examples and serving utilities.
 
 ## Capabilities
 
@@ -127,13 +116,15 @@ The local server exposes `POST /v1/systemone` and `GET /health`, binds to `127.0
 
 ZooWork operates the production Instinct API. Create an API key and explore the model family at [instinct.zoowork.ai](https://instinct.zoowork.ai/); the current authentication, model and usage contract is documented at [instinct.zoowork.ai/docs](https://instinct.zoowork.ai/docs/).
 
-| Hosted model ID | Structure | Input price / 1M tokens | Output price / 1M tokens | Published local latency |
-|---|---|---:|---:|---:|
-| `instinct` | Frozen Qwen3.8-27B, single order | $0.03 | $0 | p50 36.6 ms; p95 243.2 ms |
-| `instinct-dual-4b` | Frozen Qwen3.5-4B, concurrent dual order | $0.01 | $0 | p50 40.7–41.2 ms; p95 78.9–82.0 ms |
-| `instinct-tuned-4b` | Fine-tuned Qwen3.5-4B, single order | $0.01 | $0 | Not yet published |
+### Hosted API pricing
 
-Prices are the currently published ZooWork API rates. The latency figures are reporting-only measurements over the JevBench public 231-item set: warmed, serial, node-local requests on the documented production serving paths. They include the local serving stack but exclude Internet, TLS and public-gateway overhead. The 27B values pool three complete passes; the dual-4B values are the observed range across three passes. They are not latency SLOs or official JevBench Speed scores. No matching release-protocol latency result is yet available for `instinct-tuned-4b`, so this table does not substitute a number from a different 4B checkpoint.
+| Model ID | Input / 1M tokens | Output |
+|---|---:|---:|
+| `instinct` | $0.03 | Free |
+| `instinct-dual-4b` | $0.01 | Free |
+| `instinct-tuned-4b` | $0.01 | Free |
+
+These are serving prices for ZooWork's managed API, not licenses or usage fees for the open weights. Running the models yourself does not use the hosted API billing plan.
 
 ```bash
 export INSTINCT_API_KEY='your-key'
