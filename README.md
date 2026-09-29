@@ -125,6 +125,14 @@ The local server exposes `POST /v1/systemone` and `GET /health`, binds to `127.0
 
 ZooWork operates the production Instinct API. Create an API key and explore the model family at [instinct.zoowork.ai](https://instinct.zoowork.ai/); the current authentication, model and usage contract is documented at [instinct.zoowork.ai/docs](https://instinct.zoowork.ai/docs/).
 
+| Hosted model ID | Structure | Input price / 1M tokens | Output price / 1M tokens | Published local latency |
+|---|---|---:|---:|---:|
+| `instinct` | Frozen Qwen3.8-27B, single order | $0.03 | $0 | p50 36.6 ms; p95 243.2 ms |
+| `instinct-dual-4b` | Frozen Qwen3.5-4B, concurrent dual order | $0.01 | $0 | p50 40.7–41.2 ms; p95 78.9–82.0 ms |
+| `instinct-tuned-4b` | Fine-tuned Qwen3.5-4B, single order | $0.01 | $0 | Not yet published |
+
+Prices are the currently published ZooWork API rates. The latency figures are reporting-only measurements over the JevBench public 231-item set: warmed, serial, node-local requests on the documented production serving paths. They include the local serving stack but exclude Internet, TLS and public-gateway overhead. The 27B values pool three complete passes; the dual-4B values are the observed range across three passes. They are not latency SLOs or official JevBench Speed scores. No matching release-protocol latency result is yet available for `instinct-tuned-4b`, so this table does not substitute a number from a different 4B checkpoint.
+
 ```bash
 export INSTINCT_API_KEY='your-key'
 
@@ -151,7 +159,7 @@ curl https://api.zoowork.ai/v1/systemone \
   }'
 ```
 
-The hosted product offers additional model IDs behind the same typed API. This repository's open-model release remains `instinct-tuned-4b`; consult the live API documentation for hosted availability and pricing.
+The hosted product offers all three model IDs behind the same typed API. This repository's open-model release remains `instinct-tuned-4b`; consult the live API documentation for current availability and pricing.
 
 ## Request and response contract
 
