@@ -8,9 +8,9 @@ This repository holds one shared runtime, the `instinct` Python package, and one
 
 | Model | Directory | Weights | Orders | T | Question types |
 |---|---|---|---|---|---|
-| instinct-tuned-4b | [`models/instinct-tuned-4b`](models/instinct-tuned-4b) | [`srpone/instinct-tuned-4b`](https://huggingface.co/srpone/instinct-tuned-4b) (LoRA fine-tune of Qwen3.5-4B, merged) | 1 | 2.80 (calibrated) | noul, choice, score |
 | instinct | [`models/instinct`](models/instinct) | [`Qwen/Qwen3.8-27B`](https://huggingface.co/Qwen/Qwen3.8-27B) @ `1d4bf0f`, untrained | 1 | 1 (uncalibrated) | noul, choice, score |
 | instinct-dual-4b | [`models/instinct-dual-4b`](models/instinct-dual-4b) | [`Qwen/Qwen3.5-4B`](https://huggingface.co/Qwen/Qwen3.5-4B) @ `851bf6e`, untrained | 2 | 1 (uncalibrated) | noul, choice, score |
+| instinct-tuned-4b | [`models/instinct-tuned-4b`](models/instinct-tuned-4b) | [`srpone/instinct-tuned-4b`](https://huggingface.co/srpone/instinct-tuned-4b) (LoRA fine-tune of Qwen3.5-4B, merged) | 1 | 2.80 (calibrated) | noul, choice, score |
 
 The HF repositories `srpone/instinct` and `srpone/instinct-dual-4b` hold model cards only.
 
