@@ -5,13 +5,18 @@ modifications of source files from vLLM 0.17.1
 (https://github.com/vllm-project/vllm/tree/v0.17.1), which is licensed under the
 Apache License 2.0 (see LICENSE in this directory, retrieved from that tag).
 Copyright contributors to the vLLM project. The patch changes five files
-(listed in patch/patch-manifest.json); the original SPDX/Apache-2.0 headers of
-those files are retained unchanged, because the patch only adds and edits
-hunks. Files produced by common/build_overlay.py or
-instinct-dual-4b/prepare_padded_overlay.py are likewise derived from vLLM and
-remain under Apache-2.0. Do not redistribute patched vLLM files without this
-notice.
+(listed in patch/patch-manifest.json). As required by section 4(b) of the
+Apache License 2.0, each changed file carries a prominent notice, added by the
+patch directly below its original SPDX/Apache-2.0 header (which is retained
+unchanged):
+
+    # Modified by Serendipity One Inc., 2026: native decision readout (see serving/vllm/NOTICE).
+
+The modifications add a native final-position candidate readout
+(prefill-only scoring) to the completions endpoint, sampling parameters,
+scheduler and GPU model runner. Files produced by common/build_overlay.py are
+likewise derived from vLLM, carry the same notice and remain under Apache-2.0.
+Do not redistribute patched vLLM files without this notice.
 
 The remaining Python files in this directory are part of this repository and
-follow the repository license. The Reflex prompt used by instinct-dual-4b is
-attributed in the top-level NOTICE and in instinct/recipes/reflex_dual_4b.py.
+follow the repository license.

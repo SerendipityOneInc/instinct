@@ -1,5 +1,5 @@
 {
-  "name": "instinct",
+  "name": "reference-qwen3.8-27b",
   "hf_repo": "Qwen/Qwen3.8-27B",
   "base_model": "Qwen/Qwen3.8-27B",
   "prompt_version": "jqv.prompt.v1+4f85a0b34776",

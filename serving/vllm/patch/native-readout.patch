@@ -1,6 +1,13 @@
 --- a/vllm/entrypoints/openai/completion/protocol.py
 +++ b/vllm/entrypoints/openai/completion/protocol.py
-@@ -307,7 +307,7 @@
+@@ -1,5 +1,6 @@
+ # SPDX-License-Identifier: Apache-2.0
+ # SPDX-FileCopyrightText: Copyright contributors to the vLLM project
++# Modified by Serendipity One Inc., 2026: native decision readout (see serving/vllm/NOTICE).
+ 
+ # Adapted from
+ # https://github.com/lm-sys/FastChat/blob/168ccc29d3f7edc50823016105c024fe2282732a/fastchat/protocol/openai_api_protocol.py
+@@ -307,7 +308,7 @@
              stop_token_ids=self.stop_token_ids,
              logprobs=self.logprobs,
              ignore_eos=self.ignore_eos,
@@ -9,7 +16,7 @@
              min_tokens=self.min_tokens,
              prompt_logprobs=prompt_logprobs,
              skip_special_tokens=self.skip_special_tokens,
-@@ -453,6 +453,8 @@
+@@ -453,6 +454,8 @@
  
  
  class CompletionResponseChoice(OpenAIBaseModel):
@@ -20,7 +27,14 @@
      logprobs: CompletionLogProbs | None = None
 --- a/vllm/entrypoints/openai/completion/serving.py
 +++ b/vllm/entrypoints/openai/completion/serving.py
-@@ -488,6 +488,58 @@
+@@ -1,5 +1,6 @@
+ # SPDX-License-Identifier: Apache-2.0
+ # SPDX-FileCopyrightText: Copyright contributors to the vLLM project
++# Modified by Serendipity One Inc., 2026: native decision readout (see serving/vllm/NOTICE).
+ 
+ import asyncio
+ import time
+@@ -488,6 +489,58 @@
          tokenizer: TokenizerLike | None,
          request_metadata: RequestResponseMetadata,
      ) -> CompletionResponse:
@@ -81,7 +95,14 @@
          num_generated_tokens = 0
 --- a/vllm/sampling_params.py
 +++ b/vllm/sampling_params.py
-@@ -458,7 +458,7 @@
+@@ -1,5 +1,6 @@
+ # SPDX-License-Identifier: Apache-2.0
+ # SPDX-FileCopyrightText: Copyright contributors to the vLLM project
++# Modified by Serendipity One Inc., 2026: native decision readout (see serving/vllm/NOTICE).
+ """Sampling parameters for text generation."""
+ 
+ import copy
+@@ -458,7 +459,7 @@
              )
          if not 0.0 <= self.min_p <= 1.0:
              raise ValueError(f"min_p must be in [0, 1], got {self.min_p}.")
@@ -92,9 +113,10 @@
                  parameter="max_tokens",
 --- a/vllm/v1/core/sched/scheduler.py
 +++ b/vllm/v1/core/sched/scheduler.py
-@@ -1,6 +1,9 @@
+@@ -1,6 +1,10 @@
  # SPDX-License-Identifier: Apache-2.0
  # SPDX-FileCopyrightText: Copyright contributors to the vLLM project
++# Modified by Serendipity One Inc., 2026: native decision readout (see serving/vllm/NOTICE).
  import itertools
 +import json
 +import os
@@ -102,7 +124,7 @@
  import time
  from collections import defaultdict, deque
  from collections.abc import Iterable
-@@ -1358,6 +1361,24 @@
+@@ -1358,6 +1362,24 @@
                  new_token_ids, stopped = self._update_request_with_output(
                      request, new_token_ids
                  )
@@ -129,7 +151,14 @@
                  request.status = RequestStatus.FINISHED_STOPPED
 --- a/vllm/v1/worker/gpu_model_runner.py
 +++ b/vllm/v1/worker/gpu_model_runner.py
-@@ -2958,6 +2958,21 @@
+@@ -1,5 +1,6 @@
+ # SPDX-License-Identifier: Apache-2.0
+ # SPDX-FileCopyrightText: Copyright contributors to the vLLM project
++# Modified by Serendipity One Inc., 2026: native decision readout (see serving/vllm/NOTICE).
+ 
+ import functools
+ import gc
+@@ -2958,6 +2959,21 @@
          logits: torch.Tensor | None,
          spec_decode_metadata: SpecDecodeMetadata | None,
      ) -> SamplerOutput:
@@ -151,7 +180,7 @@
          # Sample the next token and get logprobs if needed.
          sampling_metadata = self.input_batch.sampling_metadata
          # Update output token ids with tokens sampled in last step
-@@ -3026,7 +3041,12 @@
+@@ -3026,7 +3042,12 @@
          if not self.use_async_scheduling:
              # Get the valid generated tokens.
              max_gen_len = sampled_token_ids.shape[-1]
@@ -165,7 +194,7 @@
                  # No spec decode tokens.
                  valid_sampled_token_ids = self._to_list(sampled_token_ids)
                  # Mask out the sampled tokens that should not be sampled.
-@@ -4563,6 +4583,32 @@
+@@ -4563,6 +4584,32 @@
                  continue
  
              num_prompt_tokens = len(request.prompt_token_ids)
@@ -198,7 +227,7 @@
              prompt_token_ids = torch.tensor(request.prompt_token_ids).to(
                  self.device, non_blocking=True
              )
-@@ -4632,7 +4678,7 @@
+@@ -4632,7 +4679,7 @@
          # num_prompt_logprobs_dict.
          for req_id in completed_prefill_reqs:
              del num_prompt_logprobs_dict[req_id]

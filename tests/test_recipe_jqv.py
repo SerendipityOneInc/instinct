@@ -64,7 +64,7 @@ def _prompt(name):
 
 
 def test_identity():
-    assert RECIPE.name == "instinct" and RECIPE.temperature == 1.0
+    assert RECIPE.name == "reference-qwen3.8-27b" and RECIPE.temperature == 1.0
     assert RECIPE.readout == "full_head" and RECIPE.max_length == 32768
     assert RECIPE.revision == "1d4bf0f2ff6012fd82039f2fa52739d0dd7c60c0"
     assert PROMPT_HASH in RECIPE.extra["prompt_version"]

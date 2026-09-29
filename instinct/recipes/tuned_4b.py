@@ -1,29 +1,20 @@
-"""instinct-tuned-4b: Qwen3.5-4B fine-tune, prompt instinct.prompt.v1 (APUS-OpenJev-v1 contract, MIT)."""
+"""instinct-tuned-4b: Qwen3.5-4B fine-tune, prompt ``instinct.prompt.v1``."""
 
-from .._vendor.apus_runtime.contracts import (
-    LABELS,
-    render_ordered_prompt,
-    render_prompt,
-    validate_request,
-)
+from ..prompt import LABELS, PROMPT_VERSION, render, validate_record
 from .base import Encoded, Recipe
-
-# Public name of the vendored prompt contract; the rendered prompt is byte-identical.
-PROMPT_VERSION = "instinct.prompt.v1"
 
 
 class Tuned4B(Recipe):
     def encode(self, tokenizer, record, order):
-        """Adapted from the APUS-OpenJev-v1 reference runtime (MIT).
+        """Chat-templated prompt (thinking disabled) plus one label token per candidate.
 
-        Chat template without thinking; every label must be one non-special
-        token that tokenizes identically when appended to the prompt.
+        Each letter must be a single, non-special token that the tokenizer keeps
+        intact when it directly follows the prompt, so the logit read at the last
+        prompt position is the logit of that letter.
         """
-        validate_request(record)
-        given = [c["id"] for c in record["criteria"]]
-        text = render_prompt(record) if order == given else render_ordered_prompt(record, order)
+        validate_record(record)
         prompt = tokenizer.apply_chat_template(
-            [{"role": "user", "content": text}],
+            [{"role": "user", "content": render(record, order)}],
             tokenize=False,
             add_generation_prompt=True,
             enable_thinking=False,
@@ -31,24 +22,24 @@ class Tuned4B(Recipe):
         ids = tokenizer.encode(prompt, add_special_tokens=False)
         if not ids or len(ids) > self.max_length:
             raise ValueError("input exceeds the runtime limit; no truncation is performed")
-        tokens = []
-        for label in LABELS[: len(order)]:
-            token = tokenizer.encode(label, add_special_tokens=False)
-            joint = tokenizer.encode(prompt + label, add_special_tokens=False)
-            if len(token) != 1 or joint != ids + token:
+        special = set(tokenizer.all_special_ids)
+        label_ids = []
+        for letter in LABELS[: len(order)]:
+            piece = tokenizer.encode(letter, add_special_tokens=False)
+            if len(piece) != 1 or tokenizer.encode(prompt + letter, add_special_tokens=False) != ids + piece:
                 raise ValueError("candidate label is not a single token at the answer boundary")
-            if token[0] in tokenizer.all_special_ids:
+            if piece[0] in special:
                 raise ValueError("candidate label must not be a special token")
-            tokens.append(token[0])
-        if len(set(tokens)) != len(tokens):
+            label_ids.append(piece[0])
+        if len(set(label_ids)) != len(label_ids):
             raise ValueError("candidate token ids must be unique")
-        return Encoded(ids, tokens, list(order))
+        return Encoded(ids, label_ids, list(order))
 
 
 RECIPE = Tuned4B(
     name="instinct-tuned-4b",
     hf_repo="srpone/instinct-tuned-4b",
-    revision="6c2ca4be019ae9224eee6c83bfa8dc6fd5bb930b",
+    revision="50546bf18c4f11115dc92bc1ce82c75cfc2968db",
     temperature=2.8,
     readout="candidate_rows",
     max_length=8192,

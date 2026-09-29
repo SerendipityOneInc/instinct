@@ -1,15 +1,16 @@
-"""Every models/<name>/ directory must be complete and self-consistent."""
+"""Every models/<dir>/ and reference/<dir>/ directory must be complete and self-consistent."""
 
 import json
 from pathlib import Path
 
 import pytest
 
-from instinct._vendor.apus_runtime.contracts import validate_request
+from instinct.prompt import validate_record
 from instinct.recipes import RECIPES
 from instinct.systemone import to_records
 
-MODELS = sorted(p for p in (Path(__file__).parents[1] / "models").iterdir()
+ROOT = Path(__file__).parents[1]
+MODELS = sorted(p for root in ("models", "reference") for p in (ROOT / root).iterdir()
                 if p.is_dir() and p.name != "TEMPLATE")
 REQUIRED = ("README.md", "model.json", "examples/request.json", "examples/expected.json",
             "canary/reference.jsonl")
@@ -24,8 +25,7 @@ def test_model_directory(model):
     for name in REQUIRED:
         assert (model / name).is_file(), name
     meta = json.loads((model / "model.json").read_text())
-    assert meta["name"] == model.name
-    recipe = RECIPES[model.name]  # every model directory has a registered recipe
+    recipe = RECIPES[meta["name"]]  # every model directory has a registered recipe
     assert meta["hf_repo"] == recipe.hf_repo
     assert meta["temperature"] == recipe.temperature
     request = json.loads((model / "examples/request.json").read_text())
@@ -37,7 +37,7 @@ def test_model_directory(model):
         reference = {row["id"]: row for row in jsonl(model / "canary/reference.jsonl")}
         assert records and len(records) == len(reference)
         for record in records:
-            validate_request(record)
+            validate_record(record)
             assert len(reference[record["id"]]["logits"]) == len(record["criteria"])
     else:
         # SystemOne canaries with reference answers (scripts/compare_endpoint.py).
@@ -49,4 +49,5 @@ def test_model_directory(model):
 
 
 def test_every_recipe_has_a_model_directory():
-    assert sorted(RECIPES) == [p.name for p in MODELS]
+    names = [json.loads((p / "model.json").read_text())["name"] for p in MODELS]
+    assert sorted(RECIPES) == sorted(names) and len(set(names)) == len(names)

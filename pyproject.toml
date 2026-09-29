@@ -5,10 +5,22 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "instinct-decision"
 version = "0.1.0"
-description = "Runtime for the Instinct single-forward-pass decision models"
+description = "Single-forward-pass runtime for the instinct-tuned-4b decision model"
 readme = "README.md"
 license = "Apache-2.0"
-license-files = ["LICENSE", "NOTICE", "instinct/_vendor/apus_runtime/LICENSE", "instinct/_vendor/reflex/LICENSE"]
+license-files = ["LICENSE", "NOTICE"]
+authors = [{ name = "Serendipity One Inc." }]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "Intended Audience :: Science/Research",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+]
 requires-python = ">=3.10"
 dependencies = []
 
@@ -23,13 +35,14 @@ gpu = [
 ]
 test = ["pytest"]
 
+[project.urls]
+Homepage = "https://github.com/SerendipityOneInc/instinct"
+Repository = "https://github.com/SerendipityOneInc/instinct"
+"Hugging Face" = "https://huggingface.co/srpone"
+
 [project.scripts]
 instinct-decide = "instinct.cli:main"
 instinct-serve = "instinct.server:main"
 
 [tool.setuptools.packages.find]
 include = ["instinct*"]
-
-[tool.setuptools.package-data]
-"instinct._vendor.apus_runtime" = ["LICENSE", "SOURCE.txt"]
-"instinct._vendor.reflex" = ["LICENSE", "SOURCE.txt"]
