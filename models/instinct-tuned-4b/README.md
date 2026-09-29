@@ -21,11 +21,11 @@ instinct-decide --model instinct-tuned-4b models/instinct-tuned-4b/examples/requ
 python scripts/check_canaries.py --model instinct-tuned-4b
 ```
 
-On 1x H200 with bf16 and `transformers==5.16.1`, the logits match exactly (`canary_tolerance` 0). On other hardware, expect small differences.
+The check passes when every prediction agrees and every candidate probability is within `canary_tolerance` (0.02, in probability units after the T = 2.80 softmax; see `model.json`). It also reports `exact_logit_match` separately: on 1x H200 with bf16 and `transformers==5.16.1` the logits matched the reference exactly. Other GPUs and kernels shift bf16 logits slightly, so an inexact logit match alone is not a failure.
 
 ## Results
 
-JevBench public 231 at full depth, bf16, scored with the official JevBench client with items in their original option order (198/231 overall). These public items were also used during our development for model selection, so treat the table as a reference point, not a held-out score. See the model card for training details and limitations.
+JevBench public 231 (198/231) at full depth, bf16, scored with the official JevBench client, items in their original option order. These public items were also used during our development for model selection, so treat the table as a reference point, not a held-out score. See the model card for training details and limitations.
 
 | Split | Accuracy |
 |---|---|

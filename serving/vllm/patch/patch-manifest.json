@@ -5,23 +5,23 @@
   "files": {
     "vllm/entrypoints/openai/completion/protocol.py": {
       "original_sha256": "cccbbda6227db345310490ad4112174393590687c384100fc05e703cc34286c2",
-      "patched_sha256": "16252d8c96e8478775b851446a664779e6ff80fe18fbefb32842a69a504d5396"
+      "patched_sha256": "7686ce6125ebb83d0a79c4b5780a1fd4ebde93b0ead6ce0766bdf4726ee50279"
     },
     "vllm/entrypoints/openai/completion/serving.py": {
       "original_sha256": "8b8b8c177e759f98fbc2c3587d3b01c26f335c52d34c9d57c9a1d0811e8d8c13",
-      "patched_sha256": "d70943bac7562c889d8cc1ca1e7db20c67c944c4f906673b7f79794e482bd467"
+      "patched_sha256": "dd2b17c4054204b20722f655487abe88726a4af6fd8bce078acec8013d31e33b"
     },
     "vllm/sampling_params.py": {
       "original_sha256": "414b8fc899c2ad6997bca3fa09d41ed4a2e0902af99ff36ea032670e9079cb6a",
-      "patched_sha256": "bcffd6264531bce14735954ad178cf400f203e61be7a3889b92e13f1052ac7c1"
+      "patched_sha256": "965c7c09a88cccd916b63a9a7c9cf89e2abd1f9774f6c4eb2ccbfe8987c4a390"
     },
     "vllm/v1/core/sched/scheduler.py": {
       "original_sha256": "8231254faa2d2aaeccff2cff309ff60ea90ce7194a81edaddcf6aa806b9f98f1",
-      "patched_sha256": "710d5aa2f2dec40396d0cbc142344c4a01588851bed452fa514057775171681d"
+      "patched_sha256": "e1e57f3c93348b846e2b69db01bdda1093d6876f7df716dd4c0bf057733af578"
     },
     "vllm/v1/worker/gpu_model_runner.py": {
       "original_sha256": "9e5e02842a5442d955014fc7b1227a69043b462463d05ed8f46e9f4ae48dd725",
-      "patched_sha256": "43b8b90c4182420648e0331b8d1138d401d176c1c6e1bd294f1739ad6bcfd69e"
+      "patched_sha256": "bb526f844333d825a8c6e573a7b96cf676c44d0b3f5d754d5221a2a4d01ae949"
     }
   }
 }

@@ -18,7 +18,7 @@ import copy
 import json
 import math
 
-from ._vendor.apus_runtime.contracts import BINARY_CRITERIA, LABELS, validate_request
+from .prompt import LABELS, YES_NO, validate_record
 
 REQUEST_FIELDS = {"model", "state", "questions", "permutations"}
 QUESTION_FIELDS = {"type", "instructions", "criteria"}
@@ -73,7 +73,7 @@ def to_records(body, model_id=None):
                 or any(v is not None and not isinstance(v, str) for v in criteria.values())
             ):
                 raise ValueError(f"{qid}: noul criteria must map true/false to descriptions")
-            candidates = copy.deepcopy(BINARY_CRITERIA)
+            candidates = copy.deepcopy(list(YES_NO))
         elif kind == "score":
             if not isinstance(criteria, list) or not 2 <= len(criteria) <= len(LABELS):
                 raise ValueError(f"{qid}: score needs a list of 2..{len(LABELS)} level descriptions")
@@ -93,7 +93,7 @@ def to_records(body, model_id=None):
             id=qid, group_id="systemone", state=state, instructions=instructions,
             primitive="noul" if kind == "noul" else "choice", criteria=candidates,
         )
-        validate_request(record)
+        validate_record(record)
         records.append((qid, kind, record))
     return records
 

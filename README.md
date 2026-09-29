@@ -2,28 +2,28 @@
 
 **[ZooWork](https://zoowork.ai)** · [Instinct homepage](https://instinct.zoowork.ai/)
 
-Instinct is the decision-model family built by [ZooWork](https://zoowork.ai). Instinct models are **decision models**. Given a shared state and a question with fixed candidates, they return a probability per candidate from one forward pass per option order, with no text generation.
+Instinct is a **decision model** built by [ZooWork](https://zoowork.ai): `instinct-tuned-4b`, a post-trained Qwen3.5-4B. Given a shared state and a question with fixed candidates, it returns a probability per candidate from one forward pass, with no text generation.
 
-This repository holds one shared runtime, the `instinct` Python package, and one directory per released model. Each model is a *recipe* (`instinct/recipes/`): its weights, prompt, label tokens, readout, option orders and temperature. Two of the three models use the untrained Qwen weights directly; their recipes pin the Qwen repository and revision.
+This repository holds the runtime, the `instinct` Python package. A model is a *recipe* (`instinct/recipes/`): its weights, prompt, label tokens, readout, option orders and temperature.
 
-## Models
+## Model
 
 | Model | Directory | Weights | Orders | T | Question types |
 |---|---|---|---|---|---|
-| instinct | [`models/instinct`](models/instinct) | [`Qwen/Qwen3.8-27B`](https://huggingface.co/Qwen/Qwen3.8-27B) @ `1d4bf0f`, untrained | 1 | 1 (uncalibrated) | noul, choice, score |
-| instinct-dual-4b | [`models/instinct-dual-4b`](models/instinct-dual-4b) | [`Qwen/Qwen3.5-4B`](https://huggingface.co/Qwen/Qwen3.5-4B) @ `851bf6e`, untrained | 2 | 1 (uncalibrated) | noul, choice, score |
 | instinct-tuned-4b | [`models/instinct-tuned-4b`](models/instinct-tuned-4b) | [`srpone/instinct-tuned-4b`](https://huggingface.co/srpone/instinct-tuned-4b) (LoRA fine-tune of Qwen3.5-4B, merged) | 1 | 2.80 (calibrated) | noul, choice, score |
 
-`instinct` and `instinct-dual-4b` download the Qwen weights directly; their HF model cards (`srpone/instinct`, `srpone/instinct-dual-4b`) are not published yet.
-
-Each model directory contains:
+The model directory contains:
 
 - a README with a results table;
 - `model.json` metadata;
 - an example request with its expected answer;
-- canary requests with the outputs our production deployment returned, and a tolerance (`scripts/check_canaries.py --model <name>`).
+- canary records with the logits our production deployment returned, and a tolerance (`scripts/check_canaries.py --model <name>`).
 
 To add a model, see [`models/TEMPLATE`](models/TEMPLATE).
+
+## Reference baseline
+
+[`reference/qwen3.8-27b`](reference/qwen3.8-27b) (recipe `reference-qwen3.8-27b`) runs the untrained [`Qwen/Qwen3.8-27B`](https://huggingface.co/Qwen/Qwen3.8-27B) at a pinned revision behind our decision prompt and readout. It is provided as a reference baseline for comparison, not as a released Instinct model, and has no Hugging Face repository of its own: the weights are downloaded from Qwen.
 
 ## Install
 
@@ -38,12 +38,11 @@ Layer execution is verified against `transformers==5.16.1`, and the runtime refu
 
 ## Use
 
-Every command takes the model name: `instinct`, `instinct-dual-4b` or `instinct-tuned-4b`.
+Every command takes the recipe name: `instinct-tuned-4b` or `reference-qwen3.8-27b`.
 
 ```bash
-instinct-decide --model instinct models/instinct/examples/request.json
-instinct-decide --model instinct-dual-4b models/instinct-dual-4b/examples/request.json
 instinct-decide --model instinct-tuned-4b models/instinct-tuned-4b/examples/request.json
+instinct-decide --model reference-qwen3.8-27b reference/qwen3.8-27b/examples/request.json
 instinct-serve  --model instinct-tuned-4b --port 8008
 # --weights <local dir or HF repo> overrides where the weights come from
 curl -s localhost:8008/v1/systemone -d @models/instinct-tuned-4b/examples/request.json
@@ -52,7 +51,7 @@ curl -s localhost:8008/v1/systemone -d @models/instinct-tuned-4b/examples/reques
 ```python
 from instinct import InstinctModel, answer
 
-model = InstinctModel.from_pretrained("instinct-tuned-4b")  # or "instinct", "instinct-dual-4b"
+model = InstinctModel.from_pretrained("instinct-tuned-4b")  # or "reference-qwen3.8-27b"
 result = answer(model, {
     "state": {"customer": "My package says delivered but it is not here."},
     "questions": {
@@ -76,20 +75,20 @@ For single records in the lower-level format (`id`, `group_id`, `state`, `instru
 | `questions` | object | Maps each question id to a question. |
 | `questions.*.type` | `noul`, `choice` or `score` | |
 | `questions.*.instructions` | string | The question or proposition. |
-| `questions.*.criteria` | depends on type | `choice`: an object mapping 2–16 option keys to descriptions. `score`: a list of 2–16 ordered level descriptions (2–10 for `instinct-dual-4b`). `noul`: optional `{"true", "false"}` wording; whether the model sees it depends on the recipe. |
+| `questions.*.criteria` | depends on type | `choice`: an object mapping 2–16 option keys to descriptions. `score`: a list of 2–16 ordered level descriptions. `noul`: optional `{"true", "false"}` wording; whether the model sees it depends on the recipe. |
 | `model`, `permutations` | optional | `model` must match the served model. `permutations` must be 1 or omitted; each recipe fixes its own option orders. |
 
 ### How the runtime scores a question
 
 1. The recipe renders the question into one prompt per option order and assigns a label token to each candidate.
-2. One forward pass per order reads the label-token logits at the readout position. `instinct` and `instinct-dual-4b` read the full head at the last position; `instinct-tuned-4b` applies only the candidate LM-head rows to the final-norm hidden state.
+2. One forward pass per order reads the label-token logits at the last position. `instinct-tuned-4b` applies only the candidate LM-head rows to the full-depth, final-norm hidden state; `reference-qwen3.8-27b` reads the full head.
 3. Each order's logits are divided by the recipe's temperature and softmaxed, mapped back to candidate ids, and averaged over orders.
 
-Each model's README describes its prompt exactly.
+Each model's README describes its prompt exactly; `instinct/prompt.py` defines the `instinct-tuned-4b` prompt.
 
 ## Optimized serving
 
-`serving/vllm/` holds the optional vLLM patches and launchers our production uses for `instinct` and `instinct-dual-4b`. The Transformers path in `instinct/` is the reference; the canaries record how closely the two agree.
+`serving/vllm/` holds the optional vLLM patch and launcher used for the `reference-qwen3.8-27b` baseline. The Transformers path in `instinct/` is the reference; the canaries record how closely the two agree.
 
 ## Test
 
@@ -103,4 +102,4 @@ Instinct is developed by [ZooWork](https://zoowork.ai), which turns your experti
 
 ## License
 
-This code is released under Apache-2.0 (see `LICENSE`). `instinct/_vendor/apus_runtime/` holds MIT-licensed code from [APUS-OpenJev-v1](https://huggingface.co/apus-ailab/APUS-OpenJev-v1); `instinct/_vendor/reflex/` holds MIT-licensed code from [Reflex](https://github.com/kshetrajna12/reflex). Each vendored directory's `LICENSE` and `SOURCE.txt` record the origin and changes. Each model's weights carry their own license; see its model card.
+This code is released under Apache-2.0 (see `LICENSE` and `NOTICE`). `serving/vllm/` contains modified vLLM files, which carry vLLM's Apache-2.0 license and notice (`serving/vllm/LICENSE`, `serving/vllm/NOTICE`). Model weights carry their own license; see the model card.

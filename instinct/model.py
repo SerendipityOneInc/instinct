@@ -9,7 +9,7 @@ import json
 import os
 from pathlib import Path
 
-from ._vendor.apus_runtime.contracts import format_response
+from .prompt import format_result
 from .recipes import get as get_recipe
 
 SUPPORTED_TRANSFORMERS = "5.16.1"
@@ -53,12 +53,7 @@ class InstinctModel:
         self.tokenizer = tokenizer
         self.recipe = recipe
         self.device = self.model.get_input_embeddings().weight.device
-        self.wrapper = None
-        if recipe.readout == "candidate_rows":
-            from ._vendor.apus_runtime.early_exit import QwenEarlyExit
-
-            self.wrapper = QwenEarlyExit(self.model)
-        elif recipe.readout != "full_head":
+        if recipe.readout not in ("candidate_rows", "full_head"):
             raise ValueError(f"unknown readout {recipe.readout!r}")
 
     @property
@@ -116,16 +111,31 @@ class InstinctModel:
 
         input_ids = torch.tensor([encoded.input_ids], dtype=torch.long, device=self.device)
         labels = torch.tensor(encoded.label_token_ids, dtype=torch.long, device=self.device)
-        if self.wrapper is not None:
+        if self.recipe.readout == "candidate_rows":
             if encoded.readout_index != -1:
                 raise ValueError("candidate_rows readout reads the last position only")
-            (decision,) = self.wrapper(input_ids, labels, depths=(self.wrapper.full_depth,))
-            return decision.logits[0].float().tolist()
+            return self._candidate_rows(input_ids, labels)
         if encoded.readout_index >= 0:
             raise ValueError("readout_index must count from the end (-1 = last position)")
         output = self.model(input_ids=input_ids, use_cache=False, return_dict=True,
                             logits_to_keep=-encoded.readout_index)
         return output.logits[0, 0].index_select(0, labels).float().tolist()
+
+    def _text_model(self):
+        """The Qwen3.5 text decoder (embeddings, layers, final norm), without the LM head."""
+        inner = self.model.model
+        return inner.language_model if self.model.config.model_type == "qwen3_5" else inner
+
+    def _candidate_rows(self, input_ids, labels):
+        """Full-depth final-norm hidden state at the last position times the label rows of the LM head."""
+        import torch.nn.functional as F
+
+        output = self._text_model()(input_ids=input_ids, use_cache=False, return_dict=True)
+        hidden = output.last_hidden_state[:, -1]  # already passed through the final norm
+        head = self.model.get_output_embeddings()
+        rows = head.weight.index_select(0, labels)
+        bias = None if head.bias is None else head.bias.index_select(0, labels)
+        return F.linear(hidden, rows, bias)[0].float().tolist()
 
     def decide(self, record):
         """Score one validated record (id, group_id, state, instructions, primitive, criteria)."""
@@ -135,7 +145,7 @@ class InstinctModel:
         with torch.inference_mode():
             logits = [self._logits(encoded) for encoded in branches]
         probabilities = self.recipe.merge(record, branches, logits)
-        response = format_response(record, probabilities)
+        response = format_result(record, probabilities)
         response.update(
             prediction=max(response["probabilities"], key=response["probabilities"].get),
             prompt_tokens=sum(len(e.input_ids) for e in branches),

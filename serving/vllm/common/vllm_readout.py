@@ -20,13 +20,13 @@ import threading
 import time
 import urllib.parse
 import urllib.request
-from concurrent.futures import ThreadPoolExecutor
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 
-from instinct._vendor.apus_runtime.contracts import format_response
+from instinct.prompt import format_result
 from instinct.systemone import to_answer
 
 MAX_CANDIDATES = 26  # the patch accepts 2..26 candidate ids per request
+MAX_BODY_BYTES = 8 * 1024 * 1024
 
 
 class Backend:
@@ -73,12 +73,8 @@ class Backend:
             return False
 
 
-def score_chunk(backend, prompts, label_ids, all_ids, padded):
-    """One request of independent sequences -> label log-probabilities per sequence.
-
-    ``padded``: the prompts already carry one extra ignored token and the server
-    reads the penultimate position (readout ``native-padded-v1``).
-    """
+def score_chunk(backend, prompts, label_ids, all_ids):
+    """One request of independent sequences -> label log-probabilities per sequence."""
     if not 2 <= len(all_ids) <= MAX_CANDIDATES:
         raise RuntimeError(f"native candidate union has invalid size: {len(all_ids)}")
     response = backend.completions(
@@ -89,7 +85,7 @@ def score_chunk(backend, prompts, label_ids, all_ids, padded):
             "prompt_logprobs": len(all_ids) - 1,
             "temperature": 0.0,
             "vllm_xargs": {
-                "jqv_readout": "native-padded-v1" if padded else "native-v1",
+                "jqv_readout": "native-v1",
                 "jqv_candidate_ids": ",".join(map(str, all_ids)),
             },
         }
@@ -112,7 +108,7 @@ def score_chunk(backend, prompts, label_ids, all_ids, padded):
     for choice, expected_ids, prompt in zip(ordered, label_ids, prompts):
         if choice["text"] != "" or choice["token_ids"] != []:
             raise RuntimeError("readout choice carries generated content")
-        if choice.get("jqv_readout_position") != len(prompt) - (2 if padded else 1):
+        if choice.get("jqv_readout_position") != len(prompt) - 1:
             raise RuntimeError("native readout position mismatch")
         union = {int(k): v for k, v in choice["jqv_candidate_logprobs"].items()}
         if set(union) != set(all_ids) or not all(
@@ -127,72 +123,40 @@ def score_chunk(backend, prompts, label_ids, all_ids, padded):
 class VLLMDecisionModel:
     """Drop-in for ``instinct.model.InstinctModel`` on the server side.
 
-    ``secondary`` (optional): a second, independent vLLM server on another GPU.
-    With it, each question's two option-order branches run concurrently, one per
-    server, and requests are serialized (batch one) so the two engines never
-    batch unrelated sequences.
+    Requests are scored one at a time against a single vLLM server.
     """
 
-    def __init__(self, tokenizer, recipe, primary, secondary=None, padded=False, batch_size=0):
-        self.tokenizer, self.recipe = tokenizer, recipe
-        self.primary, self.secondary, self.padded = primary, secondary, padded
+    def __init__(self, tokenizer, recipe, primary, batch_size=0):
+        self.tokenizer, self.recipe, self.primary = tokenizer, recipe, primary
         self.batch_size = batch_size  # 0 = all sequences of a request in one call
         self.lock = threading.Lock()
-        self.executor = ThreadPoolExecutor(2, "order") if secondary else None
-        if secondary and (batch_size != 1 or not padded):
-            raise ValueError("dual backends require batch size 1 and the padded readout")
 
-    def _sequences(self, branches):
-        if not self.padded:
-            return [list(e.input_ids) for e in branches]
-        return [list(e.input_ids) + [e.label_token_ids[0]] for e in branches]
-
-    def _score(self, backend, encoded):
+    def _score(self, encoded):
         all_ids = sorted({t for e in encoded for t in e.label_token_ids})
-        prompts = self._sequences(encoded)
+        prompts = [list(e.input_ids) for e in encoded]
         labels = [e.label_token_ids for e in encoded]
         step = self.batch_size or len(prompts)
         out = []
         for s in range(0, len(prompts), step):
-            out += score_chunk(
-                backend, prompts[s : s + step], labels[s : s + step], all_ids, self.padded
-            )
+            out += score_chunk(self.primary, prompts[s : s + step], labels[s : s + step], all_ids)
         return out
 
-    def _score_pair(self, encoded):
-        from parallel_order_scores import score_order_pairs  # instinct-dual-4b/
-
-        all_ids = sorted({t for e in encoded for t in e.label_token_ids})
-        return score_order_pairs(
-            self.executor,
-            score_chunk,
-            self.primary,
-            self.secondary,
-            self._sequences(encoded),
-            [e.label_token_ids for e in encoded],
-            all_ids,
-            self.padded,
-        )
-
     def decide_many(self, records):
-        """Score every record of one request; batch across questions when single-engine."""
+        """Score every record of one request, batching across questions."""
         per_record = [
             [self.recipe.encode(self.tokenizer, r, o) for o in self.recipe.orders(r)]
             for r in records
         ]
         with self.lock:
-            if self.secondary is not None:
-                logits = [self._score_pair(enc) for enc in per_record]
-            else:
-                flat = [e for enc in per_record for e in enc]
-                scored, k, logits = self._score(self.primary, flat), 0, []
-                for enc in per_record:
-                    logits.append(scored[k : k + len(enc)])
-                    k += len(enc)
+            flat = [e for enc in per_record for e in enc]
+            scored, k, logits = self._score(flat), 0, []
+            for enc in per_record:
+                logits.append(scored[k : k + len(enc)])
+                k += len(enc)
         results = []
         for record, enc, lg in zip(records, per_record, logits):
             probabilities = self.recipe.merge(record, enc, lg)
-            response = format_response(record, probabilities)
+            response = format_result(record, probabilities)
             response.update(
                 prediction=max(response["probabilities"], key=response["probabilities"].get),
                 prompt_tokens=sum(len(e.input_ids) for e in enc),
@@ -202,8 +166,7 @@ class VLLMDecisionModel:
         return results
 
     def close(self):
-        if self.executor is not None:
-            self.executor.shutdown(wait=True, cancel_futures=True)
+        pass
 
 
 def answer_many(model, body, model_id=None):
@@ -236,8 +199,7 @@ def make_handler(model, model_id, identity):
         def do_GET(self):
             if self.path != "/health":
                 return self._send(404, {"error": "not found"})
-            backends = [b for b in (model.primary, model.secondary) if b is not None]
-            if not all(b.healthy() for b in backends):
+            if not model.primary.healthy():
                 return self._send(503, {"error": "vLLM backend not ready"})
             self._send(200, {"status": "ok", "model": model_id, **identity})
 
@@ -245,7 +207,15 @@ def make_handler(model, model_id, identity):
             if self.path != "/v1/systemone":
                 return self._send(404, {"error": "not found"})
             try:
-                body = json.loads(self.rfile.read(int(self.headers.get("Content-Length", "0"))))
+                length = int(self.headers.get("Content-Length", "0"))
+            except ValueError:
+                length = -1
+            if not 0 <= length <= MAX_BODY_BYTES:
+                self.close_connection = True  # the body was not read
+                return self._send(413 if length > MAX_BODY_BYTES else 400,
+                                  {"error": "invalid or oversized Content-Length"})
+            try:
+                body = json.loads(self.rfile.read(length))
                 started = time.perf_counter()
                 result = answer_many(model, body, model_id)
             except (ValueError, TypeError) as exc:

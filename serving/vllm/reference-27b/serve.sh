@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Serve `instinct` (frozen Qwen3.8-27B, jqv prompt) on ONE GPU through the
+# Serve the `reference-qwen3.8-27b` baseline (frozen Qwen3.8-27B, jqv prompt) on ONE GPU through the
 # native-readout-patched vLLM 0.17.1, behind POST /v1/systemone.
 #
 #   MODEL_DIR=/path/to/Qwen3.8-27B ./serve.sh
@@ -13,7 +13,7 @@ set -euo pipefail
 HERE=$(cd "$(dirname "$0")" && pwd)
 PORT=${PORT:-8008}
 BACKEND_PORT=${BACKEND_PORT:-8001}
-NAME=${SERVED_BACKEND_NAME:-instinct-backend}
+NAME=${SERVED_BACKEND_NAME:-reference-backend}
 
 # The patched scheduler requires this variable (see patch/native-readout.patch).
 export JQV_PREFILL_AUDIT=${JQV_PREFILL_AUDIT:-/dev/null}
@@ -36,6 +36,10 @@ until curl -sf "http://127.0.0.1:$BACKEND_PORT/health" >/dev/null; do
   sleep 2
 done
 
-python3 "$HERE/../common/serve_adapter.py" --model instinct --weights "$MODEL_DIR" \
+python3 "$HERE/../common/serve_adapter.py" --model reference-qwen3.8-27b --weights "$MODEL_DIR" \
   --backend "http://127.0.0.1:$BACKEND_PORT" --backend-model "$NAME" \
-  --readout native --host "${HOST:-127.0.0.1}" --port "$PORT"
+  --readout native --host "${HOST:-127.0.0.1}" --port "$PORT" &
+ADAPTER_PID=$!
+# bash defers traps while a foreground child runs; waiting lets SIGTERM stop both.
+trap 'kill $ADAPTER_PID $BACKEND_PID 2>/dev/null || true' EXIT INT TERM
+wait $ADAPTER_PID

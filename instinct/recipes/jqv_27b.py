@@ -1,4 +1,4 @@
-"""instinct: frozen (untrained) Qwen3.8-27B behind the jqv prompt and readout.
+"""reference-qwen3.8-27b: frozen (untrained) Qwen3.8-27B behind the jqv prompt and readout.
 
 No weights of our own. The base model is used as released; the decision comes
 from the logits of the option letters " A", " B", ... at the last prompt
@@ -13,7 +13,7 @@ same SystemOne -> candidate mapping (see ``records`` and ``encode``).
 
 import json
 
-from .._vendor.apus_runtime.contracts import validate_request
+from ..prompt import validate_record
 from .base import Encoded, Recipe
 
 PROMPT_FORMAT_VERSION = 1
@@ -68,7 +68,7 @@ class Jqv27B(Recipe):
         return [[c["id"] for c in record["criteria"]]]
 
     def _choices(self, record, order):
-        validate_request(record)
+        validate_record(record)
         by_id = {c["id"]: c["description"] for c in record["criteria"]}
         if sorted(order) != sorted(by_id):
             raise ValueError("order must permute the record's candidates")
@@ -99,7 +99,7 @@ class Jqv27B(Recipe):
 
 
 RECIPE = Jqv27B(
-    name="instinct",
+    name="reference-qwen3.8-27b",
     hf_repo="Qwen/Qwen3.8-27B",
     revision="1d4bf0f2ff6012fd82039f2fa52739d0dd7c60c0",
     temperature=1.0,

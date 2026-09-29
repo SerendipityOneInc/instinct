@@ -5,7 +5,7 @@ Copies the five original files from an installed (or checked-out) vLLM 0.17.1,
 verifies their SHA-256 against patch/patch-manifest.json, applies
 patch/native-readout.patch with ``patch -p1``, verifies the patched hashes and
 writes ``<output>/patch-manifest.json`` (the format that
-instinct-dual-4b/prepare_padded_overlay.py consumes).
+check_overlay.py reads).
 
 The overlay is a directory tree ``<output>/vllm/...``. Use it by copying the
 files over the installed vLLM package, or by bind-mounting each file
