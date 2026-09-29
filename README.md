@@ -28,7 +28,7 @@ To add a model, see [`models/TEMPLATE`](models/TEMPLATE).
 A CUDA GPU is required. The runtime is verified on one H200 in bf16.
 
 ```bash
-git clone https://github.com/<github-org>/instinct && cd instinct
+git clone https://github.com/SerendipityOneInc/instinct && cd instinct
 pip install -e ".[gpu]"
 ```
 
