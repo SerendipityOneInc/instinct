@@ -9,7 +9,7 @@ description = "Single-forward-pass runtime for the instinct-tuned-4b decision mo
 readme = "README.md"
 license = "Apache-2.0"
 license-files = ["LICENSE", "NOTICE"]
-authors = [{ name = "Serendipity One Inc." }]
+authors = [{ name = "ZooWork Team, Serendipity One Inc." }]
 classifiers = [
     "Development Status :: 4 - Beta",
     "Intended Audience :: Developers",
@@ -36,7 +36,8 @@ gpu = [
 test = ["pytest"]
 
 [project.urls]
-Homepage = "https://github.com/SerendipityOneInc/instinct"
+Homepage = "https://instinct.zoowork.ai/"
+Documentation = "https://instinct.zoowork.ai/docs/"
 Repository = "https://github.com/SerendipityOneInc/instinct"
 "Hugging Face" = "https://huggingface.co/srpone"
 
