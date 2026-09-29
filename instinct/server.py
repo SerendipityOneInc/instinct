@@ -45,6 +45,8 @@ def make_handler(model, model_id):
                     result = answer(model, body, model_id)
             except (ValueError, TypeError) as exc:
                 return self._send(422, {"error": str(exc)})
+            except Exception as exc:  # e.g. CUDA out of memory
+                return self._send(500, {"error": f"{type(exc).__name__}: {exc}"})
             result.update(model=model_id, runtime={"server_s": time.perf_counter() - started})
             self._send(200, result)
 
@@ -57,12 +59,14 @@ def main(argv=None):
     parser.add_argument("--weights", default=None)
     parser.add_argument("--revision", default=None)
     parser.add_argument("--device", default="cuda:0")
+    parser.add_argument("--dtype", default="bfloat16", choices=["bfloat16", "float32"])
     parser.add_argument("--host", default="127.0.0.1")
     parser.add_argument("--port", type=int, default=8008)
     args = parser.parse_args(argv)
     model_id = args.model
     model = InstinctModel.from_pretrained(args.model, weights=args.weights,
-                                          revision=args.revision, device=args.device)
+                                          revision=args.revision, device=args.device,
+                                          dtype=args.dtype)
     server = ThreadingHTTPServer((args.host, args.port), make_handler(model, model_id))
     print(f"serving {model_id} on http://{args.host}:{args.port}", flush=True)
     server.serve_forever()

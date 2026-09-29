@@ -2,7 +2,7 @@
   "name": "instinct-tuned-4b",
   "hf_repo": "srpone/instinct-tuned-4b",
   "base_model": "Qwen/Qwen3.5-4B",
-  "prompt_version": "jev.dynamic.prompt.v2",
+  "prompt_version": "instinct.prompt.v1",
   "temperature": 2.8,
   "full_depth": 32,
   "question_types": [

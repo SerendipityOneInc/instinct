@@ -46,3 +46,7 @@ Probabilities are uncalibrated (T = 1). On the hard split, ECE is 0.089. With th
 ## Credits
 
 Prompt construction and option-order logic: Reflex by Kshetrajna Raghavan (MIT). Base model: Qwen3.5-4B by the Qwen team (see its model card for license).
+
+---
+
+Part of the Instinct model family by [ZooWork](https://zoowork.ai) · [instinct.zoowork.ai](https://instinct.zoowork.ai/)

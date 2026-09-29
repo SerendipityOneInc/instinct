@@ -39,3 +39,7 @@ Probabilities are uncalibrated (T = 1). These public items were also used during
 ## Credits
 
 Prompt format and readout: jqv, our internal decision-prompt library, published here with its maintainer's approval; the recipe in `instinct/recipes/jqv_27b.py` is a port of it. Base model: Qwen3.8-27B by the Qwen team (see its model card for license).
+
+---
+
+Part of the Instinct model family by [ZooWork](https://zoowork.ai) · [instinct.zoowork.ai](https://instinct.zoowork.ai/)

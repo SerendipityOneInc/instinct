@@ -1,13 +1,15 @@
-"""instinct-tuned-4b: Qwen3.5-4B fine-tune, APUS-OpenJev-v1 prompt contract v2."""
+"""instinct-tuned-4b: Qwen3.5-4B fine-tune, prompt instinct.prompt.v1 (APUS-OpenJev-v1 contract, MIT)."""
 
 from .._vendor.apus_runtime.contracts import (
     LABELS,
-    PROMPT_VERSION,
     render_ordered_prompt,
     render_prompt,
     validate_request,
 )
 from .base import Encoded, Recipe
+
+# Public name of the vendored prompt contract; the rendered prompt is byte-identical.
+PROMPT_VERSION = "instinct.prompt.v1"
 
 
 class Tuned4B(Recipe):
@@ -46,7 +48,7 @@ class Tuned4B(Recipe):
 RECIPE = Tuned4B(
     name="instinct-tuned-4b",
     hf_repo="srpone/instinct-tuned-4b",
-    revision=None,
+    revision="6c2ca4be019ae9224eee6c83bfa8dc6fd5bb930b",
     temperature=2.8,
     readout="candidate_rows",
     max_length=8192,

@@ -1,4 +1,4 @@
-"""Instinct: a 4B single-forward-pass decision model runtime."""
+"""Instinct: a single-forward-pass decision model runtime."""
 
 from .calibration import calibrate
 from .systemone import answer, to_records

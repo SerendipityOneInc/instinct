@@ -1,6 +1,8 @@
 # Instinct
 
-Instinct models are **decision models**. Given a shared state and a question with fixed candidates, they return a probability per candidate from one forward pass per option order, with no text generation.
+**[ZooWork](https://zoowork.ai)** · [Instinct homepage](https://instinct.zoowork.ai/)
+
+Instinct is the decision-model family built by [ZooWork](https://zoowork.ai). Instinct models are **decision models**. Given a shared state and a question with fixed candidates, they return a probability per candidate from one forward pass per option order, with no text generation.
 
 This repository holds one shared runtime, the `instinct` Python package, and one directory per released model. Each model is a *recipe* (`instinct/recipes/`): its weights, prompt, label tokens, readout, option orders and temperature. Two of the three models use the untrained Qwen weights directly; their recipes pin the Qwen repository and revision.
 
@@ -74,7 +76,7 @@ For single records in the lower-level format (`id`, `group_id`, `state`, `instru
 | `questions` | object | Maps each question id to a question. |
 | `questions.*.type` | `noul`, `choice` or `score` | |
 | `questions.*.instructions` | string | The question or proposition. |
-| `questions.*.criteria` | depends on type | `choice`: an object mapping 2–16 option keys to descriptions. `score`: a list of 2–16 ordered level descriptions. `noul`: optional `{"true", "false"}` wording; whether the model sees it depends on the recipe. |
+| `questions.*.criteria` | depends on type | `choice`: an object mapping 2–16 option keys to descriptions. `score`: a list of 2–16 ordered level descriptions (2–10 for `instinct-dual-4b`). `noul`: optional `{"true", "false"}` wording; whether the model sees it depends on the recipe. |
 | `model`, `permutations` | optional | `model` must match the served model. `permutations` must be 1 or omitted; each recipe fixes its own option orders. |
 
 ### How the runtime scores a question
@@ -94,6 +96,10 @@ Each model's README describes its prompt exactly.
 ```bash
 pip install -e ".[test]" && pytest -q     # CPU only
 ```
+
+## About
+
+Instinct is developed by [ZooWork](https://zoowork.ai), which turns your expertise into an AI agent in minutes. Product page, demos and updates: [instinct.zoowork.ai](https://instinct.zoowork.ai/).
 
 ## License
 

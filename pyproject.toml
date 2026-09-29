@@ -5,10 +5,10 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "instinct-decision"
 version = "0.1.0"
-description = "Runtime for the Instinct 4B single-forward-pass decision model"
+description = "Runtime for the Instinct single-forward-pass decision models"
 readme = "README.md"
 license = "Apache-2.0"
-license-files = ["LICENSE", "instinct/_vendor/apus_runtime/LICENSE"]
+license-files = ["LICENSE", "NOTICE", "instinct/_vendor/apus_runtime/LICENSE", "instinct/_vendor/reflex/LICENSE"]
 requires-python = ">=3.10"
 dependencies = []
 
@@ -32,3 +32,4 @@ include = ["instinct*"]
 
 [tool.setuptools.package-data]
 "instinct._vendor.apus_runtime" = ["LICENSE", "SOURCE.txt"]
+"instinct._vendor.reflex" = ["LICENSE", "SOURCE.txt"]
