@@ -74,18 +74,20 @@ For the open tuned model, the split is easy 48/48, standard 69/72 and hard 81/11
 
 ## Installation
 
-Python 3.10 or newer and a CUDA GPU with BF16 support (Ampere or newer) are required for inference. The `flash-linear-attention` Triton kernels are compiled on first use, so the environment also needs a C compiler; slim images without `gcc` (for example the `pytorch/pytorch:*-runtime` tags) install fine but fail on the first forward pass with `Failed to find C compiler`.
+Python 3.10 or newer and a CUDA GPU with BF16 support (Ampere or newer) are required for inference. `instinct-tuned-4b` downloads about 8.5 GB of weights from Hugging Face on first use and runs on a single 24 GB GPU; the 27B reference needs about 54 GB (see [`reference/qwen3.8-27b`](reference/qwen3.8-27b/README.md)). The `flash-linear-attention` Triton kernels are compiled on first use, so the environment also needs a C compiler; slim images without `gcc` (for example the `pytorch/pytorch:*-runtime` tags) install fine but fail on the first forward pass with `Failed to find C compiler`.
 
 The simplest environment is an [NGC PyTorch container](https://catalog.ngc.nvidia.com/orgs/nvidia/containers/pytorch), which ships a matched torch, CUDA and compiler. Install on top of it and keep its torch: the `gpu` extra accepts NGC's `2.8.0a0` builds, so pip leaves them in place.
 
 ```bash
-docker run --gpus all --shm-size=8g -it nvcr.io/nvidia/pytorch:25.06-py3
+docker run --gpus all --shm-size=8g -it \
+  -v ~/.cache/huggingface:/root/.cache/huggingface \
+  nvcr.io/nvidia/pytorch:25.06-py3
 ```
 
 | Environment | GPU | Result |
 |---|---|---|
 | torch 2.13.0+cu129, triton 3.7.1 (reference) | H200 | canary logits match production exactly |
-| NGC `pytorch:25.06-py3` (torch 2.8.0a0, CUDA 12.9) | A10 | all tests pass; canary predictions 14/14, probabilities within 0.021 |
+| NGC `pytorch:25.06-py3` (torch 2.8.0a0, CUDA 12.9) | A10 | all tests pass; CLI, Python and HTTP examples run as written; canary predictions 14/14, probabilities within 0.021 |
 
 ```bash
 git clone https://github.com/SerendipityOneInc/instinct.git
@@ -110,6 +112,8 @@ To reproduce the frozen 27B `instinct` recipe locally:
 instinct-decide --model reference-qwen3.8-27b \
   reference/qwen3.8-27b/examples/request.json
 ```
+
+The first run downloads the weights; later runs load them from the Hugging Face cache. The output for the example request is checked in as [`examples/expected.json`](models/instinct-tuned-4b/examples/expected.json), produced on an H200. Other GPUs give the same choices with probabilities that can differ in the second decimal place (see the canary note in the [model README](models/instinct-tuned-4b/README.md)).
 
 Use `--weights <local-directory-or-hf-repo>` to override the recipe's weight location.
 
