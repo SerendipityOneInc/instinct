@@ -6,9 +6,14 @@ Each released model is one Recipe. InstinctModel runs it; the recipe itself
 never touches torch.
 """
 
+import math
 from dataclasses import dataclass, field
 
 from ..calibration import calibrate
+
+QUESTION_TYPES = ("noul", "choice", "score")
+# Question type of a record that does not carry one (e.g. canary records.jsonl).
+_TYPE_OF_PRIMITIVE = {"noul": "noul", "choice": "choice", "score_level": "score"}
 
 
 @dataclass(frozen=True)
@@ -35,6 +40,34 @@ class Recipe:
     max_length: int
     description: str = ""
     extra: dict = field(default_factory=dict)
+    # Optional per-question-type temperature; types not listed use ``temperature``.
+    temperature_by_type: dict = field(default_factory=dict)
+
+    def __post_init__(self):
+        for kind, value in self.temperature_by_type.items():
+            if kind not in QUESTION_TYPES:
+                raise ValueError(f"temperature_by_type: unknown question type {kind!r}")
+            if isinstance(value, bool) or not isinstance(value, (int, float)) \
+                    or not math.isfinite(value) or value <= 0:
+                raise ValueError(f"temperature_by_type[{kind!r}] must be finite and positive")
+
+    def temperature_for(self, question_type):
+        """Serving temperature for ``question_type`` ("noul", "choice" or "score")."""
+        if question_type not in QUESTION_TYPES:
+            raise ValueError(f"unknown question type {question_type!r}")
+        return self.temperature_by_type.get(question_type, self.temperature)
+
+    @staticmethod
+    def question_type(record):
+        """The SystemOne question type of ``record``.
+
+        ``to_records`` stamps it as ``question_type`` (a score question is a
+        ``choice`` primitive); records without the stamp map from the primitive.
+        """
+        return record.get("question_type") or _TYPE_OF_PRIMITIVE[record["primitive"]]
+
+    def record_temperature(self, record):
+        return self.temperature_for(self.question_type(record))
 
     # --- request side -------------------------------------------------------
 
@@ -55,13 +88,19 @@ class Recipe:
     # --- output side --------------------------------------------------------
 
     def merge(self, record, encoded_branches, branch_logits):
-        """Temperature-softmax each branch, map back to candidate ids, average."""
+        """Temperature-softmax each branch, map back to candidate ids, average.
+
+        The temperature is ``record_temperature(record)``: the recipe's
+        ``temperature_by_type`` entry for the record's question type, else
+        ``temperature``.
+        """
+        temperature = self.record_temperature(record)
         original = [c["id"] for c in record["criteria"]]
         totals = dict.fromkeys(original, 0.0)
         for encoded, logits in zip(encoded_branches, branch_logits):
             if sorted(encoded.candidates) != sorted(original):
                 raise ValueError("branch candidates must permute the record's candidates")
-            for candidate, p in zip(encoded.candidates, calibrate(logits, self.temperature)):
+            for candidate, p in zip(encoded.candidates, calibrate(logits, temperature)):
                 totals[candidate] += p
         merged = [totals[c] / len(branch_logits) for c in original]
         total = sum(merged)

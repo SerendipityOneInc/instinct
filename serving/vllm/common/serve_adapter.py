@@ -55,6 +55,7 @@ def main(argv=None):
         "readout": args.readout,
         "backend_version": "0.17.1-native-readout-patch",
         "temperature": recipe.temperature,
+        "temperature_by_type": dict(recipe.temperature_by_type),
         "model_revision": args.model_revision or recipe.revision,
     }
     run_server(model, args.served_name or args.model, identity, args.host, args.port)

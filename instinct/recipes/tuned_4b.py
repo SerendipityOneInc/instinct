@@ -39,10 +39,11 @@ class Tuned4B(Recipe):
 RECIPE = Tuned4B(
     name="instinct-tuned-4b",
     hf_repo="srpone/instinct-tuned-4b",
-    revision="50546bf18c4f11115dc92bc1ce82c75cfc2968db",
+    revision="fc68951b968589aa4e316a1b0bb2543c4c64886f",
     temperature=2.8,
     readout="candidate_rows",
     max_length=8192,
-    description="Qwen3.5-4B LoRA fine-tune; prompt " + PROMPT_VERSION + "; one option order; T=2.80",
+    description="Qwen3.5-4B LoRA fine-tune; prompt " + PROMPT_VERSION + "; one option order; T=2.80 (noul 0.50)",
     extra={"prompt_version": PROMPT_VERSION, "full_depth": 32},
+    temperature_by_type={"noul": 0.5},
 )

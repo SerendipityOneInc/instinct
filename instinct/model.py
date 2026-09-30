@@ -45,6 +45,17 @@ def _resolve(name_or_path, revision):
     return Path(snapshot_download(repo_id=name_or_path, revision=revision))
 
 
+def check_decision_config(declared, recipe):
+    """Raise unless the HF ``decision_config.json`` temperatures equal the recipe's.
+
+    A file without ``temperature_by_type`` declares an empty mapping.
+    """
+    if declared.get("temperature") != recipe.temperature:
+        raise ValueError("decision_config.json temperature differs from the recipe")
+    if declared.get("temperature_by_type", {}) != dict(recipe.temperature_by_type):
+        raise ValueError("decision_config.json temperature_by_type differs from the recipe")
+
+
 class InstinctModel:
     """Single-request, text-only decision runtime. Never truncates input."""
 
@@ -59,6 +70,10 @@ class InstinctModel:
     @property
     def temperature(self):
         return self.recipe.temperature
+
+    @property
+    def temperature_by_type(self):
+        return dict(self.recipe.temperature_by_type)
 
     @classmethod
     def from_pretrained(cls, name, *, weights=None, revision=None, device="cuda:0",
@@ -79,9 +94,7 @@ class InstinctModel:
                              revision if weights else (revision or recipe.revision))
         decision = directory / "decision_config.json"
         if decision.exists():
-            declared = json.loads(decision.read_text())
-            if declared.get("temperature") != recipe.temperature:
-                raise ValueError("decision_config.json temperature differs from the recipe")
+            check_decision_config(json.loads(decision.read_text()), recipe)
         config = AutoConfig.from_pretrained(directory, local_files_only=True)
         if config.model_type == "qwen3_5":
             from transformers import Qwen3_5ForConditionalGeneration as loader
@@ -149,7 +162,7 @@ class InstinctModel:
         response.update(
             prediction=max(response["probabilities"], key=response["probabilities"].get),
             prompt_tokens=sum(len(e.input_ids) for e in branches),
-            temperature=self.recipe.temperature,
+            temperature=self.recipe.record_temperature(record),
         )
         if len(branches) == 1:
             response["logits"] = logits[0]

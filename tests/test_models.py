@@ -28,6 +28,7 @@ def test_model_directory(model):
     recipe = RECIPES[meta["name"]]  # every model directory has a registered recipe
     assert meta["hf_repo"] == recipe.hf_repo
     assert meta["temperature"] == recipe.temperature
+    assert meta.get("temperature_by_type", {}) == recipe.temperature_by_type
     request = json.loads((model / "examples/request.json").read_text())
     expected = json.loads((model / "examples/expected.json").read_text())
     assert set(expected["answers"]) == {qid for qid, _, _ in to_records(request)}
