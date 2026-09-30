@@ -23,7 +23,7 @@ instinct-decide --model instinct-tuned-4b models/instinct-tuned-4b/examples/requ
 python scripts/check_canaries.py --model instinct-tuned-4b
 ```
 
-The check passes when every prediction agrees and every candidate probability is within `canary_tolerance` (0.05, in probability units after the temperature softmax, T = 2.80, or 0.50 for the `noul` canary; see `model.json`). It also reports `exact_logit_match` separately: on 1x H200 with bf16 and `transformers==5.16.1` the logits matched the reference exactly. Other GPUs and kernels shift bf16 logits slightly, so an inexact logit match alone is not a failure: on an A10 in the NGC `pytorch:25.06-py3` container, all 14 predictions agree, the largest logit difference is 0.25 and the largest probability difference is 0.020.
+The check passes when every prediction agrees and every candidate probability is within `canary_tolerance` (0.05, in probability units after the temperature softmax, T = 2.80, or 0.50 for the `noul` canary; see `model.json`). It also reports `exact_logit_match` separately: on 1x H200 with bf16 and `transformers==5.16.1` the logits matched the reference exactly. Other GPUs and kernels shift bf16 logits slightly, so an inexact logit match alone is not a failure: on an A10 in the NGC `pytorch:25.06-py3` container, all 14 predictions agree, the largest logit difference is 0.25 and the largest probability difference is 0.020. These A10 figures were measured with T = 2.80 on every row, before the separate `noul` temperature; at T = 0.50 the same logit difference moves the `noul` probability more.
 
 ## Measured results
 
