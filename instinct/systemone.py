@@ -92,6 +92,7 @@ def to_records(body, model_id=None):
         record = dict(
             id=qid, group_id="systemone", state=state, instructions=instructions,
             primitive="noul" if kind == "noul" else "choice", criteria=candidates,
+            question_type=kind,
         )
         validate_record(record)
         records.append((qid, kind, record))

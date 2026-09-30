@@ -1,6 +1,6 @@
 # ZooWork Instinct Tuned 4B
 
-`instinct-tuned-4b` is ZooWork's open 4B decision model: a LoRA fine-tune of Qwen3.5-4B, merged into the base weights. It serves all three question types (`noul`, `choice`, `score`) from one forward pass at full depth, with serving temperature T = 2.80.
+`instinct-tuned-4b` is ZooWork's open 4B decision model: a LoRA fine-tune of Qwen3.5-4B, merged into the base weights. It serves all three question types (`noul`, `choice`, `score`) from one forward pass at full depth, with serving temperature T = 2.80 for `choice` and `score` and T = 0.50 for `noul`. JevBench v1.5 scores a `noul` answer with P(yes) strictly between 0.2 and 0.8 as an abstention, so `noul` probabilities are sharpened with a separate temperature chosen on an in-house development set; predictions are unchanged, since a two-class softmax at a different temperature keeps the arg-max.
 
 - Weights and model card: [`srpone/instinct-tuned-4b`](https://huggingface.co/srpone/instinct-tuned-4b)
 - Hosted API: [`instinct.zoowork.ai`](https://instinct.zoowork.ai/) using model ID `instinct-tuned-4b`
@@ -23,7 +23,7 @@ instinct-decide --model instinct-tuned-4b models/instinct-tuned-4b/examples/requ
 python scripts/check_canaries.py --model instinct-tuned-4b
 ```
 
-The check passes when every prediction agrees and every candidate probability is within `canary_tolerance` (0.05, in probability units after the T = 2.80 softmax; see `model.json`). It also reports `exact_logit_match` separately: on 1x H200 with bf16 and `transformers==5.16.1` the logits matched the reference exactly. Other GPUs and kernels shift bf16 logits slightly, so an inexact logit match alone is not a failure: on an A10 in the NGC `pytorch:25.06-py3` container, all 14 predictions agree, the largest logit difference is 0.25 and the largest probability difference is 0.020.
+The check passes when every prediction agrees and every candidate probability is within `canary_tolerance` (0.05, in probability units after the temperature softmax, T = 2.80, or 0.50 for the `noul` canary; see `model.json`). It also reports `exact_logit_match` separately: on 1x H200 with bf16 and `transformers==5.16.1` the logits matched the reference exactly. Other GPUs and kernels shift bf16 logits slightly, so an inexact logit match alone is not a failure: on an A10 in the NGC `pytorch:25.06-py3` container, all 14 predictions agree, the largest logit difference is 0.25 and the largest probability difference is 0.020.
 
 ## Measured results
 

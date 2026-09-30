@@ -4,6 +4,9 @@
   "base_model": "Qwen/Qwen3.5-4B",
   "prompt_version": "instinct.prompt.v1",
   "temperature": 2.8,
+  "temperature_by_type": {
+    "noul": 0.5
+  },
   "full_depth": 32,
   "question_types": [
     "noul",

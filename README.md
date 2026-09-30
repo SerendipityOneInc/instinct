@@ -252,10 +252,10 @@ For each question, the selected recipe:
 2. assigns one single-token label (`A`, `B`, …) to each candidate;
 3. runs the model once per configured option order;
 4. reads the candidate-label logits at the final prompt position;
-5. applies the recipe temperature and a softmax;
+5. applies the recipe temperature (per question type when the recipe sets `temperature_by_type`) and a softmax;
 6. maps probabilities back to the caller's candidate IDs and averages configured orders.
 
-`instinct-tuned-4b` uses one option order and applies only the candidate LM-head rows to the full-depth, final-norm hidden state. The prompt bytes are part of the trained model contract: changing [`instinct/prompt.py`](instinct/prompt.py) can change the model's output.
+`instinct-tuned-4b` uses one option order and applies only the candidate LM-head rows to the full-depth, final-norm hidden state. Its temperature is 2.80 for `choice` and `score` and 0.50 for `noul`; the lower `noul` temperature sharpens P(yes) without changing any prediction. The prompt bytes are part of the trained model contract: changing [`instinct/prompt.py`](instinct/prompt.py) can change the model's output.
 
 ## Testing and contributing
 

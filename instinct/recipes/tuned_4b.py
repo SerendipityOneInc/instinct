@@ -43,6 +43,7 @@ RECIPE = Tuned4B(
     temperature=2.8,
     readout="candidate_rows",
     max_length=8192,
-    description="Qwen3.5-4B LoRA fine-tune; prompt " + PROMPT_VERSION + "; one option order; T=2.80",
+    description="Qwen3.5-4B LoRA fine-tune; prompt " + PROMPT_VERSION + "; one option order; T=2.80 (noul 0.50)",
     extra={"prompt_version": PROMPT_VERSION, "full_depth": 32},
+    temperature_by_type={"noul": 0.5},
 )

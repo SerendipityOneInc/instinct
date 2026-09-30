@@ -160,7 +160,7 @@ class VLLMDecisionModel:
             response.update(
                 prediction=max(response["probabilities"], key=response["probabilities"].get),
                 prompt_tokens=sum(len(e.input_ids) for e in enc),
-                temperature=self.recipe.temperature,
+                temperature=self.recipe.record_temperature(record),
             )
             results.append(response)
         return results

@@ -13,7 +13,7 @@
     },
     "escalate": {
       "type": "noul",
-      "noul": 0.477693
+      "noul": 0.377539
     },
     "urgency": {
       "type": "score",
